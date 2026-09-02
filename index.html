@@ -1334,11 +1334,19 @@
 
     myPeer.on('connection', (conn) => {
       gameConn = conn;
-      // Proactively send a handshake so the joiner knows we're here,
-      // bypassing the flaky 'open' event on their end.
-      conn.on('open', () => {
-        conn.send({ type: 'hello' });
-      });
+      
+      const sendHello = () => {
+        if (conn.open) conn.send({ type: 'hello' });
+      };
+
+      // In some cases PeerJS connections are already open on the receiving end.
+      // We forcefully try to send the handshake to guarantee the joining peer gets it.
+      conn.on('open', sendHello);
+      
+      if (conn.open) sendHello();
+      setTimeout(sendHello, 500);
+      setTimeout(sendHello, 1500);
+
       setupGameConnection(true);
     });
 
