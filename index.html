@@ -28,6 +28,7 @@ input,button{font-family:inherit;}
 .side-glow .half.right{right:0;background:radial-gradient(ellipse at right center, rgba(255,145,66,.55) 0%, rgba(255,145,66,0) 70%);}
 .side-glow .half.left.lit,.side-glow .half.right.lit{opacity:1;}
 .screen{position:relative;z-index:1;width:100%;max-width:780px;display:flex;flex-direction:column;align-items:center;}
+#screenGame{max-width:none;}
 .hidden{display:none !important;}
 h1{font-size:clamp(1.5rem,3.2vw,2.4rem);margin:0 0 6px;letter-spacing:1px;text-align:center;}
 h1 span.o{color:var(--orange);} h1 span.b{color:var(--blue);}
@@ -110,6 +111,126 @@ button.reset-btn:active{transform:scale(.96);background:#262a36;}
 .legend svg{width:18px;height:18px;}
 .toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line-strong);color:var(--text);padding:10px 18px;border-radius:10px;font-size:.9rem;z-index:20;opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+
+/* Large desktop / 1080p game layout: maximize the board and move UI to the sides. */
+@media (min-width:1100px) and (min-height:800px) and (orientation:landscape){
+  #screenGame{
+    width:100%;
+    height:100%;
+    max-width:none;
+    display:grid;
+    grid-template-columns:minmax(180px,1fr) minmax(560px, min(62vh, 994px)) minmax(180px,1fr);
+    grid-template-rows:1fr;
+    align-items:center;
+    justify-items:center;
+    column-gap:24px;
+    padding:24px 32px;
+  }
+  #screenGame > #gameTitle{
+    grid-column:1;
+    grid-row:1;
+    width:100%;
+    text-align:center;
+    font-size:clamp(1.8rem,2.5vw,2.6rem);
+    margin:0;
+    align-self:center;
+  }
+  #screenGame > #connStatusRow{
+    grid-column:1;
+    grid-row:1;
+    align-self:end;
+    margin:0 0 34px;
+  }
+  #screenGame > #starterPicker{
+    grid-column:1 / 4;
+    grid-row:1;
+    align-self:start;
+    width:min(620px,70vw);
+    margin:24px auto 0;
+    pointer-events:auto;
+  }
+  #screenGame > #turnBar{
+    grid-column:3;
+    grid-row:1;
+    width:min(300px,18vw);
+    height:auto;
+    margin:0;
+    flex-direction:column;
+    border-radius:14px;
+  }
+  #screenGame > #turnBar .turn-side{
+    width:100%;
+    min-height:72px;
+    padding:14px;
+    font-size:1.05rem;
+  }
+  #screenGame > #status{
+    grid-column:3;
+    grid-row:1;
+    width:min(300px,18vw);
+    align-self:end;
+    margin:0 0 34px;
+    padding:0 10px;
+    font-size:1rem;
+  }
+  #screenGame > #bigBoard{
+    grid-column:2;
+    grid-row:1;
+    width:min(96dvh, calc(100vw - 520px), 1020px);
+    height:min(96dvh, calc(100vw - 520px), 1020px);
+    max-height:none;
+    aspect-ratio:1 / 1;
+    padding:14px;
+    gap:14px;
+    justify-self:center;
+    align-self:center;
+  }
+  #screenGame > #gameControls{
+    grid-column:1;
+    grid-row:1;
+    align-self:center;
+    flex-direction:column;
+    width:min(220px,14vw);
+    margin:0;
+  }
+  #screenGame > #gameControls .reset-btn{
+    width:100%;
+  }
+  #screenGame > #legendRow{
+    grid-column:3;
+    grid-row:1;
+    align-self:start;
+    flex-direction:column;
+    gap:10px;
+    margin:28px 0 0;
+    font-size:.9rem;
+  }
+}
+
+/* Very wide 1080p+ screens: let the square board take nearly all of its column. */
+@media (min-width:1500px) and (min-height:900px) and (orientation:landscape){
+  #screenGame{
+    grid-template-columns:minmax(220px,1fr) minmax(680px, 994px) minmax(220px,1fr);
+  }
+  #screenGame > #bigBoard{
+    width:min(96dvh, calc(100vw - 520px), 1020px);
+    height:min(96dvh, calc(100vw - 520px), 1020px);
+  }
+}
+
+/* Keep the existing compact behavior for shorter landscape screens. */
+@media (max-width:1099px), (max-height:799px){
+  #screenGame{max-width:780px;}
+}
+
+#screenGame{position:relative;}
+#screenGame #gameTitle{position:absolute;top:0;left:0;margin:0;text-align:left;z-index:2;}
+#screenGame{padding-top:0;}
+@media (max-width:699px){
+  #screenGame #gameTitle{position:static;text-align:center;margin:0 0 6px;}
+}
+
 @media (min-width:700px) and (max-width:900px) and (orientation:portrait){
   body{justify-content:flex-start;padding-top:max(14px,env(safe-area-inset-top));}
   h1{font-size:1.9rem;margin-bottom:8px;}
