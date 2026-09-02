@@ -743,7 +743,30 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" crossorigin="anonymous"></script>
+<script>
+  // If the primary CDN fails to load PeerJS for any reason, fall back to jsDelivr.
+  window.addEventListener('DOMContentLoaded', function () {
+    if (typeof Peer === 'undefined') {
+      var fallback = document.createElement('script');
+      fallback.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
+      fallback.crossOrigin = 'anonymous';
+      fallback.onerror = function () {
+        console.error('PeerJS failed to load from both CDNs.');
+      };
+      document.head.appendChild(fallback);
+    }
+  });
+</script>
+<script>
+  // Surface real error info instead of the generic "Script error." message
+  window.addEventListener('error', function (e) {
+    console.error('Uncaught error:', e.message, e.filename, e.lineno + ':' + e.colno, e.error);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    console.error('Unhandled promise rejection:', e.reason);
+  });
+</script>
 <script>
 (function () {
   const WIN_LINES = [
@@ -807,6 +830,14 @@
     toastEl.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  function peerLibReady() {
+    if (typeof Peer === 'undefined') {
+      showToast('Networking library failed to load. Check your connection and reload.');
+      return false;
+    }
+    return true;
   }
 
   function showScreen(name) {
@@ -1137,6 +1168,7 @@
   }
 
   function tryBecomeLobbyHost() {
+    if (!peerLibReady()) return;
     if (lobbyPeer) { try { lobbyPeer.destroy(); } catch(e){} }
     lobbyPeer = new Peer(LOBBY_ID, { debug: 0 });
 
@@ -1200,6 +1232,7 @@
     if (myPeer && myPeer.open) {
       openLobbyConnection();
     } else {
+      if (!peerLibReady()) return;
       myPeer = new Peer(undefined, { debug: 0 });
       myPeer.on('open', () => openLobbyConnection());
       myPeer.on('error', (err) => {
@@ -1266,6 +1299,7 @@
   });
 
   function createOnlineGame() {
+    if (!peerLibReady()) return;
     const code = randCode();
     myOpenGameCode = code;
     mode = 'online';
@@ -1300,6 +1334,11 @@
 
     myPeer.on('connection', (conn) => {
       gameConn = conn;
+      // Proactively send a handshake so the joiner knows we're here,
+      // bypassing the flaky 'open' event on their end.
+      conn.on('open', () => {
+        conn.send({ type: 'hello' });
+      });
       setupGameConnection(true);
     });
 
@@ -1323,6 +1362,7 @@
     myMark = 'O';
 
     if (!myPeer) {
+      if (!peerLibReady()) return;
       myPeer = new Peer(undefined, { debug: 0 });
       myPeer.on('open', () => actuallyJoin(code));
       myPeer.on('error', () => showToast('Could not connect.'));
@@ -1347,12 +1387,38 @@
     const conn = myPeer.connect(CODE_PREFIX + code, { reliable: true });
     gameConn = conn;
 
-    conn.on('open', () => {
+    let hasConnected = false;
+
+    function finalizeConnection() {
+      if (hasConnected) return;
+      hasConnected = true;
       setupGameConnection(false);
+    }
+
+    conn.on('open', () => {
+      finalizeConnection();
     });
+
+    // Fallback: If PeerJS swallows the 'open' event but data arrives 
+    // (like the host's 'hello' handshake), we are connected.
+    conn.on('data', () => {
+      finalizeConnection();
+    });
+
+    // Hard timeout fallback
+    setTimeout(() => {
+      if (!hasConnected) {
+        setConnStatus('bad', 'Connection timed out.');
+        showToast('Host did not respond.');
+        teardownGameConn();
+      }
+    }, 7000);
+
     conn.on('error', () => {
-      setConnStatus('bad', 'Could not reach that game.');
-      showToast('Game not found or offline.');
+      if (!hasConnected) {
+        setConnStatus('bad', 'Could not reach that game.');
+        showToast('Game not found or offline.');
+      }
     });
   }
 
@@ -1383,6 +1449,8 @@
 
   function handleGameMessage(data) {
     if (!data || !data.type) return;
+    if (data.type === 'hello') return; // Safely ignore the handshake
+    
     if (data.type === 'start') {
       beginGame(data.starter);
     } else if (data.type === 'move') {
