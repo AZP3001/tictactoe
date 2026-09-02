@@ -238,24 +238,13 @@ window.addEventListener('DOMContentLoaded', function(){
     document.head.appendChild(fallback);
   }
 });
-window.addEventListener('error', function(e){
-  console.error('Uncaught error:', e.message, e.filename, e.lineno + ':' + e.colno, e.error);
-});
-window.addEventListener('unhandledrejection', function(e){
-  console.error('Unhandled promise rejection:', e.reason);
-});
 </script>
 <script>
 (function(){
 'use strict';
 
-const WINLINES = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6]
-];
-
-const LOBBY_HOST_ID = "megattt-lobby-broadcaster-v1";
+const WINLINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const LOBBY_HOST_ID = "megattt-lobby-global-v5";
 const CODE_PREFIX = "megattt-";
 
 const screens = {
@@ -265,100 +254,54 @@ const screens = {
   game: document.getElementById('screenGame'),
 };
 
-const glowLeft = document.getElementById('glowLeft');
-const glowRight = document.getElementById('glowRight');
-
-const btnLocal = document.getElementById('btnLocal');
-const btnOnline = document.getElementById('btnOnline');
-const lobbyBack = document.getElementById('lobbyBack');
-const waitingBack = document.getElementById('waitingBack');
-const btnCreateGame = document.getElementById('btnCreateGame');
-const joinCodeInput = document.getElementById('joinCodeInput');
-const btnJoinCode = document.getElementById('btnJoinCode');
-const openGamesList = document.getElementById('openGamesList');
-const openGamesEmpty = document.getElementById('openGamesEmpty');
-const openGamesLabel = document.getElementById('openGamesLabel');
-const btnRefreshLobby = document.getElementById('btnRefreshLobby');
-const waitingCode = document.getElementById('waitingCode');
-const waitingLink = document.getElementById('waitingLink');
-const btnCopyLink = document.getElementById('btnCopyLink');
-
-const connStatusRow = document.getElementById('connStatusRow');
-const connDot = document.getElementById('connDot');
-const connText = document.getElementById('connText');
-const starterPicker = document.getElementById('starterPicker');
-const pickBlue = document.getElementById('pickBlue');
-const pickOrange = document.getElementById('pickOrange');
-const turnBar = document.getElementById('turnBar');
-const sideBlueEl = document.getElementById('sideBlue');
-const sideOrangeEl = document.getElementById('sideOrange');
-const statusEl = document.getElementById('status');
-const bigBoardEl = document.getElementById('bigBoard');
-const gameControls = document.getElementById('gameControls');
-const resetBtn = document.getElementById('resetBtn');
-const leaveBtn = document.getElementById('leaveBtn');
-const legendRow = document.getElementById('legendRow');
-const toastEl = document.getElementById('toast');
+const glowLeft = document.getElementById('glowLeft'), glowRight = document.getElementById('glowRight');
+const btnLocal = document.getElementById('btnLocal'), btnOnline = document.getElementById('btnOnline');
+const lobbyBack = document.getElementById('lobbyBack'), waitingBack = document.getElementById('waitingBack');
+const btnCreateGame = document.getElementById('btnCreateGame'), joinCodeInput = document.getElementById('joinCodeInput');
+const btnJoinCode = document.getElementById('btnJoinCode'), openGamesList = document.getElementById('openGamesList');
+const openGamesEmpty = document.getElementById('openGamesEmpty'), openGamesLabel = document.getElementById('openGamesLabel');
+const btnRefreshLobby = document.getElementById('btnRefreshLobby'), waitingCode = document.getElementById('waitingCode');
+const waitingLink = document.getElementById('waitingLink'), btnCopyLink = document.getElementById('btnCopyLink');
+const connStatusRow = document.getElementById('connStatusRow'), connDot = document.getElementById('connDot'), connText = document.getElementById('connText');
+const starterPicker = document.getElementById('starterPicker'), pickBlue = document.getElementById('pickBlue'), pickOrange = document.getElementById('pickOrange');
+const turnBar = document.getElementById('turnBar'), sideBlueEl = document.getElementById('sideBlue'), sideOrangeEl = document.getElementById('sideOrange');
+const statusEl = document.getElementById('status'), bigBoardEl = document.getElementById('bigBoard');
+const gameControls = document.getElementById('gameControls'), resetBtn = document.getElementById('resetBtn'), leaveBtn = document.getElementById('leaveBtn');
+const legendRow = document.getElementById('legendRow'), toastEl = document.getElementById('toast');
 
 let toastTimer = null;
 function showToast(msg){
-  toastEl.textContent = msg;
-  toastEl.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2600);
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2600);
 }
 
 function peerLibReady(){
-  if (typeof Peer === 'undefined') {
-    showToast('Networking library failed to load. Check your connection and reload.');
-    return false;
-  }
+  if (typeof Peer === 'undefined') { showToast('Networking library failed to load. Check connection.'); return false; }
   return true;
 }
 
-function showScreen(name){
-  Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== name));
-}
+function showScreen(name){ Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== name)); }
 
 let boards, boardStatus, activeBoard, currentPlayer, gameOver, starter;
-let mode = 'local';
-let myMark = null;
-let gameStarted = false;
+let mode = 'local', myMark = null, gameStarted = false;
 
-function xSVG(cls){
-  return `<svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/></svg>`;
-}
-function oSVG(cls){
-  return `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="${cls}" stroke-width="3.2"/></svg>`;
-}
+function xSVG(cls){ return `<svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/></svg>`; }
+function oSVG(cls){ return `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="${cls}" stroke-width="3.2"/></svg>`; }
 
 function initBoardState(startingPlayer){
   boards = Array.from({length:9}, () => Array(9).fill(null));
   boardStatus = Array(9).fill(null);
-  activeBoard = null;
-  currentPlayer = startingPlayer || 'X';
-  gameOver = false;
+  activeBoard = null; currentPlayer = startingPlayer || 'X'; gameOver = false;
 }
 
 function checkWinner(cells){
-  for (const [a,b,c] of WINLINES){
-    if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]){
-      return { winner: cells[a], line: [a,b,c] };
-    }
-  }
+  for (const [a,b,c] of WINLINES) if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) return { winner: cells[a], line: [a,b,c] };
   if (cells.every(c => c !== null)) return { winner: 'draw', line: null };
   return null;
 }
 
-function boardPositionName(idx){
-  const names = ['top-left','top-middle','top-right','middle-left','center','middle-right','bottom-left','bottom-middle','bottom-right'];
-  return names[idx];
-}
-
 function renderBoard(){
-  bigBoardEl.innerHTML = '';
-  bigBoardEl.classList.toggle('game-over', gameOver);
-
+  bigBoardEl.innerHTML = ''; bigBoardEl.classList.toggle('game-over', gameOver);
   let overallWinLine = null;
   if (gameOver){
     const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
@@ -370,72 +313,56 @@ function renderBoard(){
 
   for (let b = 0; b < 9; b++){
     const boardEl = document.createElement('div');
-    boardEl.className = 'small-board';
-    boardEl.dataset.index = b;
-
+    boardEl.className = 'small-board'; boardEl.dataset.index = b;
     const status = boardStatus[b];
     if (status === 'X') boardEl.classList.add('won-blue');
     else if (status === 'O') boardEl.classList.add('won-orange');
     else if (status === 'draw') boardEl.classList.add('drawn');
 
-    if (!gameOver && !status && (activeBoard === null || activeBoard === b)){
-      boardEl.classList.add('active-board');
-    }
+    if (!gameOver && !status && (activeBoard === null || activeBoard === b)) boardEl.classList.add('active-board');
     if (overallWinLine && overallWinLine.includes(b)) boardEl.classList.add('win-cell');
 
     for (let c = 0; c < 9; c++){
       const cellEl = document.createElement('div');
-      cellEl.className = 'cell';
-      cellEl.dataset.board = b;
-      cellEl.dataset.cell = c;
+      cellEl.className = 'cell'; cellEl.dataset.board = b; cellEl.dataset.cell = c;
       const val = boards[b][c];
       if (val === 'X'){ cellEl.classList.add('filled'); cellEl.innerHTML = xSVG('mark-blue'); }
       else if (val === 'O'){ cellEl.classList.add('filled'); cellEl.innerHTML = oSVG('mark-orange'); }
-      else { cellEl.addEventListener('click', onCellClick); }
+      else cellEl.addEventListener('click', onCellClick);
       boardEl.appendChild(cellEl);
     }
 
     if (status === 'X' || status === 'O'){
-      const overlay = document.createElement('div');
-      overlay.className = 'overlay-mark';
+      const overlay = document.createElement('div'); overlay.className = 'overlay-mark';
       overlay.innerHTML = status === 'X' ? xSVG('mark-blue') : oSVG('mark-orange');
       boardEl.appendChild(overlay);
     }
-
     bigBoardEl.appendChild(boardEl);
   }
-
   updateTurnUI();
 }
 
 function updateTurnUI(){
-  sideBlueEl.classList.toggle('active', !gameOver && currentPlayer === 'X');
-  sideBlueEl.classList.toggle('blue-active', !gameOver && currentPlayer === 'X');
-  sideOrangeEl.classList.toggle('active', !gameOver && currentPlayer === 'O');
-  sideOrangeEl.classList.toggle('orange-active', !gameOver && currentPlayer === 'O');
-  glowLeft.classList.toggle('lit', !gameOver && currentPlayer === 'X');
-  glowRight.classList.toggle('lit', !gameOver && currentPlayer === 'O');
+  sideBlueEl.classList.toggle('active', !gameOver && currentPlayer === 'X'); sideBlueEl.classList.toggle('blue-active', !gameOver && currentPlayer === 'X');
+  sideOrangeEl.classList.toggle('active', !gameOver && currentPlayer === 'O'); sideOrangeEl.classList.toggle('orange-active', !gameOver && currentPlayer === 'O');
+  glowLeft.classList.toggle('lit', !gameOver && currentPlayer === 'X'); glowRight.classList.toggle('lit', !gameOver && currentPlayer === 'O');
 
-  let blueTag = sideBlueEl.querySelector('.you-tag');
-  let orangeTag = sideOrangeEl.querySelector('.you-tag');
+  let blueTag = sideBlueEl.querySelector('.you-tag'), orangeTag = sideOrangeEl.querySelector('.you-tag');
   if (mode === 'online'){
     if (myMark === 'X' && !blueTag) sideBlueEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
     else if (myMark === 'O' && !orangeTag) sideOrangeEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
   } else {
-    if (blueTag) blueTag.remove();
-    if (orangeTag) orangeTag.remove();
+    if (blueTag) blueTag.remove(); if (orangeTag) orangeTag.remove();
   }
 
   statusEl.classList.remove('win-orange','win-blue');
 
   if (gameOver){
     const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
-    if (macroResult && macroResult.winner === 'draw'){
-      statusEl.textContent = "It's a draw!";
-    } else if (macroResult){
+    if (macroResult && macroResult.winner === 'draw') statusEl.textContent = "It's a draw!";
+    else if (macroResult){
       const who = macroResult.winner === 'X' ? 'Blue' : 'Orange';
-      let suffix = '';
-      if (mode === 'online' && macroResult.winner === myMark) suffix = " — that's you!";
+      let suffix = (mode === 'online' && macroResult.winner === myMark) ? " — that's you!" : '';
       statusEl.textContent = `${who} wins the game!${suffix}`;
       statusEl.classList.add(macroResult.winner === 'X' ? 'win-blue' : 'win-orange');
     }
@@ -443,39 +370,27 @@ function updateTurnUI(){
   }
 
   const who = currentPlayer === 'X' ? 'Blue' : 'Orange';
-  let turnSuffix = '';
-  if (mode === 'online') turnSuffix = currentPlayer === myMark ? ' — your turn' : ' — waiting';
-  if (activeBoard === null){
-    statusEl.textContent = `${who}'s turn${turnSuffix} — play anywhere`;
-  } else {
-    const pos = boardPositionName(activeBoard);
-    statusEl.textContent = `${who}'s turn${turnSuffix} — must play in the ${pos} square`;
-  }
+  let turnSuffix = (mode === 'online') ? (currentPlayer === myMark ? ' — your turn' : ' — waiting') : '';
+  if (activeBoard === null) statusEl.textContent = `${who}'s turn${turnSuffix} — play anywhere`;
+  else statusEl.textContent = `${who}'s turn${turnSuffix} — must play in the ${['top-left','top-middle','top-right','middle-left','center','middle-right','bottom-left','bottom-middle','bottom-right'][activeBoard]} square`;
 }
 
 function applyMove(boardIdx, cellIdx, mark){
   boards[boardIdx][cellIdx] = mark;
   const result = checkWinner(boards[boardIdx]);
   if (result) boardStatus[boardIdx] = result.winner;
-
-  const macroCells = boardStatus.map(s => s === 'draw' ? null : s);
-  const macroResult = checkWinner(macroCells);
-  if (macroResult){
-    gameOver = true;
-  } else {
-    const nextBoard = cellIdx;
-    activeBoard = boardStatus[nextBoard] ? null : nextBoard;
+  const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
+  if (macroResult) gameOver = true;
+  else {
+    activeBoard = boardStatus[cellIdx] ? null : cellIdx;
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
   }
 }
 
 function onCellClick(e){
   if (gameOver || !gameStarted) return;
-  const boardIdx = parseInt(e.currentTarget.dataset.board, 10);
-  const cellIdx = parseInt(e.currentTarget.dataset.cell, 10);
-  if (boardStatus[boardIdx]) return;
-  if (boards[boardIdx][cellIdx]) return;
-  if (activeBoard !== null && activeBoard !== boardIdx) return;
+  const boardIdx = parseInt(e.currentTarget.dataset.board, 10), cellIdx = parseInt(e.currentTarget.dataset.cell, 10);
+  if (boardStatus[boardIdx] || boards[boardIdx][cellIdx] || (activeBoard !== null && activeBoard !== boardIdx)) return;
 
   if (mode === 'online'){
     if (currentPlayer !== myMark) return;
@@ -489,46 +404,30 @@ function onCellClick(e){
 }
 
 function beginGame(startingPlayer){
-  gameStarted = true;
-  starter = startingPlayer;
+  gameStarted = true; starter = startingPlayer;
   initBoardState(startingPlayer);
-  starterPicker.classList.add('hidden');
-  turnBar.classList.remove('hidden');
-  statusEl.classList.remove('hidden');
-  bigBoardEl.classList.remove('hidden');
-  gameControls.classList.remove('hidden');
-  legendRow.classList.remove('hidden');
+  starterPicker.classList.add('hidden'); turnBar.classList.remove('hidden');
+  statusEl.classList.remove('hidden'); bigBoardEl.classList.remove('hidden');
+  gameControls.classList.remove('hidden'); legendRow.classList.remove('hidden');
   renderBoard();
 }
 
 function resetToStarterPicker(){
   gameStarted = false;
-  turnBar.classList.add('hidden');
-  statusEl.classList.add('hidden');
-  bigBoardEl.classList.add('hidden');
-  gameControls.classList.add('hidden');
-  legendRow.classList.add('hidden');
-  starterPicker.classList.remove('hidden');
-
-  if (mode === 'local'){
-    renderStarterPicker(null, true);
-  } else {
-    const iAmHost = myMark === 'X';
-    renderStarterPicker(null, iAmHost);
-  }
+  turnBar.classList.add('hidden'); statusEl.classList.add('hidden'); bigBoardEl.classList.add('hidden');
+  gameControls.classList.add('hidden'); legendRow.classList.add('hidden'); starterPicker.classList.remove('hidden');
+  renderStarterPicker(null, mode === 'local' ? true : myMark === 'X');
 }
 
 function renderStarterPicker(selected, selectable){
-  pickBlue.classList.toggle('selected', selected === 'X');
-  pickOrange.classList.toggle('selected', selected === 'O');
-  pickBlue.classList.toggle('selectable', !!selectable);
-  pickOrange.classList.toggle('selectable', !!selectable);
+  pickBlue.classList.toggle('selected', selected === 'X'); pickOrange.classList.toggle('selected', selected === 'O');
+  pickBlue.classList.toggle('selectable', !!selectable); pickOrange.classList.toggle('selectable', !!selectable);
   pickBlue.textContent = selectable ? 'Blue starts' : (mode === 'online' ? 'Waiting for host…' : 'Blue starts');
   pickOrange.textContent = selectable ? 'Orange starts' : (mode === 'online' ? 'Waiting for host…' : 'Orange starts');
 }
 
-pickBlue.addEventListener('click', () => { if (!pickBlue.classList.contains('selectable')) return; chooseStarter('X'); });
-pickOrange.addEventListener('click', () => { if (!pickOrange.classList.contains('selectable')) return; chooseStarter('O'); });
+pickBlue.addEventListener('click', () => { if (pickBlue.classList.contains('selectable')) chooseStarter('X'); });
+pickOrange.addEventListener('click', () => { if (pickOrange.classList.contains('selectable')) chooseStarter('O'); });
 
 function chooseStarter(mark){
   if (mode === 'online') sendToPeer({ type:'start', starter: mark });
@@ -541,128 +440,119 @@ resetBtn.addEventListener('click', () => {
 });
 
 btnLocal.addEventListener('click', () => {
-  mode = 'local';
-  myMark = null;
-  connStatusRow.classList.add('hidden');
-  leaveBtn.classList.add('hidden');
-  showScreen('game');
-  resetToStarterPicker();
+  mode = 'local'; myMark = null; connStatusRow.classList.add('hidden'); leaveBtn.classList.add('hidden');
+  showScreen('game'); resetToStarterPicker();
 });
 
-let myPeer = null;
+// SINGLE-PEER NETWORK ARCHITECTURE 
+let myCode = null, myPeer = null, myPeerInitializing = false, myPeerInitCallbacks = [];
 let gameConn = null;
-let lobbyConn = null;
-let isLobbyHost = false;
-let lobbyHostPeer = null;
-const lobbyClients = new Map();
-const openGames = new Map();
-let myOpenGameCode = null;
-
-let lobbyReconnectTimer = null;
-let lobbyReconnectDelay = 1000;
-const LOBBY_RECONNECT_MAX_DELAY = 10000;
+let lobbyConn = null, lobbyHostPeer = null, isLobbyHost = false;
+const lobbyClients = new Map(), openGames = new Map();
+let myOpenGameCode = null, lobbyReconnectTimer = null, lobbyReconnectDelay = 1000;
 
 function randCode(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  return Array.from({length:5}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
 function setConnStatus(state, text){
   connStatusRow.classList.remove('hidden');
-  connDot.className = `dot ${state}`;
-  connText.textContent = text;
+  connDot.className = `dot ${state}`; connText.textContent = text;
 }
 
-btnOnline.addEventListener('click', () => {
-  showScreen('lobby');
-  connectToLobby();
-});
+function initMyPeer(callback) {
+  if (myPeer && myPeer.open) { if (callback) callback(); return; }
+  if (callback) myPeerInitCallbacks.push(callback);
+  if (myPeerInitializing) return;
+  myPeerInitializing = true;
+
+  myCode = randCode();
+  myPeer = new Peer(CODE_PREFIX + myCode, { debug: 0 });
+
+  myPeer.on('open', () => {
+    myPeerInitializing = false;
+    myPeerInitCallbacks.forEach(cb => cb());
+    myPeerInitCallbacks = [];
+  });
+
+  myPeer.on('connection', (conn) => {
+    if (mode === 'online' && myOpenGameCode && (!gameConn || !gameConn.open)) {
+      gameConn = conn;
+      conn.on('open', () => setupGameConnection(true));
+      conn.on('data', handleGameMessage);
+      conn.on('close', handleOpponentDisconnect);
+      conn.on('error', handleOpponentDisconnect);
+      
+      setTimeout(() => {
+        if (gameConn === conn && !conn.open) { conn.close(); if(gameConn===conn) gameConn = null; }
+      }, 5000);
+    } else {
+      conn.on('open', () => {
+        conn.send({ type: 'rejected', reason: 'Game full or not waiting' });
+        setTimeout(() => conn.close(), 500);
+      });
+    }
+  });
+
+  myPeer.on('error', (err) => {
+    if (err.type === 'unavailable-id') {
+      myPeerInitializing = false;
+      try { myPeer.destroy(); } catch(e){}
+      myPeer = null; initMyPeer(); 
+    } else {
+      myPeerInitializing = false;
+      showToast("Network error. Check connection.");
+      myPeerInitCallbacks = [];
+    }
+  });
+}
+
+btnOnline.addEventListener('click', () => { showScreen('lobby'); connectToLobby(); });
 lobbyBack.addEventListener('click', () => showScreen('home'));
 waitingBack.addEventListener('click', () => { teardownGameConn(); showScreen('lobby'); });
 leaveBtn.addEventListener('click', () => { teardownGameConn(); showScreen('lobby'); });
 btnRefreshLobby.addEventListener('click', () => connectToLobby(true));
 
-function clearLobbyReconnectTimer(){
-  if (lobbyReconnectTimer){ clearTimeout(lobbyReconnectTimer); lobbyReconnectTimer = null; }
-}
-
 function scheduleLobbyReconnect(){
-  clearLobbyReconnectTimer();
+  if (lobbyReconnectTimer) clearTimeout(lobbyReconnectTimer);
   lobbyReconnectTimer = setTimeout(() => {
-    lobbyReconnectDelay = Math.min(lobbyReconnectDelay * 1.6, LOBBY_RECONNECT_MAX_DELAY);
+    lobbyReconnectDelay = Math.min(lobbyReconnectDelay * 1.6, 10000);
     connectToLobby(true);
   }, lobbyReconnectDelay);
 }
 
 function connectToLobby(forceReconnect){
   if (!peerLibReady()) return;
-  clearLobbyReconnectTimer();
+  if (lobbyReconnectTimer) clearTimeout(lobbyReconnectTimer);
 
   if (!forceReconnect && ((lobbyConn && lobbyConn.open) || isLobbyHost)){
-    renderOpenGames();
-    return;
+    renderOpenGames(); return;
   }
 
-  openGamesEmpty.textContent = 'Connecting to lobby…';
-  openGamesEmpty.classList.remove('hidden');
-  openGamesList.innerHTML = '';
-  openGamesList.appendChild(openGamesEmpty);
+  openGamesEmpty.textContent = 'Connecting to lobby…'; openGamesEmpty.classList.remove('hidden');
+  openGamesList.innerHTML = ''; openGamesList.appendChild(openGamesEmpty);
 
-  connectAsLobbyClient(false);
-}
-
-function connectAsLobbyClient(isRetryFromHostFailure){
-  if (!peerLibReady()) return;
-  isLobbyHost = false;
-
-  if (myPeer && myPeer.open){
-    openLobbyConnection();
-    return;
-  }
-  if (myPeer && !myPeer.destroyed){
-    myPeer.once('open', openLobbyConnection);
-    return;
-  }
-
-  myPeer = new Peer(undefined, { debug: 0 });
-  myPeer.on('open', openLobbyConnection);
-  myPeer.on('error', (err) => {
-    console.error('Lobby client peer error:', err);
-    openGamesEmpty.textContent = 'Could not reach lobby. Retrying…';
-    scheduleLobbyReconnect();
+  initMyPeer(() => {
+    if (isLobbyHost) renderOpenGames();
+    else openLobbyConnection();
   });
 }
 
 function openLobbyConnection(){
   if (lobbyConn){ try { lobbyConn.close(); } catch(e){} lobbyConn = null; }
-
   const conn = myPeer.connect(LOBBY_HOST_ID, { reliable: true });
-  let settled = false;
-  let joinAttemptTimeout = null;
+  let settled = false, joinAttemptTimeout = null;
 
   conn.on('open', () => {
-    settled = true;
-    clearTimeout(joinAttemptTimeout);
-    lobbyConn = conn;
-    lobbyReconnectDelay = 1000;
+    settled = true; clearTimeout(joinAttemptTimeout);
+    lobbyConn = conn; lobbyReconnectDelay = 1000;
     openGamesLabel.textContent = 'Open Games';
-    if (myOpenGameCode){
-      lobbyConn.send({ type:'announce-game', code: myOpenGameCode, name: myOpenGameCode });
-    }
+    if (myOpenGameCode) lobbyConn.send({ type:'announce-game', code: myOpenGameCode, name: myOpenGameCode });
   });
 
-  conn.on('data', (data) => {
-    if (data && data.type === 'games-list') renderOpenGamesFromList(data.games);
-  });
-
-  conn.on('error', () => {
-    if (settled) return;
-    clearTimeout(joinAttemptTimeout);
-    attemptBecomeLobbyHost();
-  });
-
+  conn.on('data', (data) => { if (data && data.type === 'games-list') renderOpenGamesFromList(data.games); });
+  conn.on('error', () => { if (settled) return; clearTimeout(joinAttemptTimeout); attemptBecomeLobbyHost(); });
   conn.on('close', () => {
     if (lobbyConn === conn) lobbyConn = null;
     openGamesEmpty.textContent = 'Disconnected from lobby. Reconnecting…';
@@ -677,281 +567,167 @@ function openLobbyConnection(){
 }
 
 function attemptBecomeLobbyHost(){
-  if (!peerLibReady()) return;
-  if (isLobbyHost) return;
-
-  const jitter = 150 + Math.floor(Math.random() * 400);
+  if (!peerLibReady() || isLobbyHost) return;
   setTimeout(() => {
     if (lobbyConn && lobbyConn.open) return;
-
     if (lobbyHostPeer){ try { lobbyHostPeer.destroy(); } catch(e){} lobbyHostPeer = null; }
+    
     lobbyHostPeer = new Peer(LOBBY_HOST_ID, { debug: 0 });
     let hostSettled = false;
 
     lobbyHostPeer.on('open', () => {
-      hostSettled = true;
-      isLobbyHost = true;
-      lobbyReconnectDelay = 1000;
-      openGamesLabel.textContent = 'Open Games';
-      renderOpenGames();
+      hostSettled = true; isLobbyHost = true; lobbyReconnectDelay = 1000;
+      openGamesLabel.textContent = 'Open Games (Hosting)'; renderOpenGames();
     });
 
     lobbyHostPeer.on('connection', (conn) => {
       if (!isLobbyHost) return;
       lobbyClients.set(conn.peer, conn);
-      conn.on('data', (data) => handleLobbyHostMessage(conn, data));
+      conn.on('data', (data) => {
+        if (!data || !data.type) return;
+        if (data.type === 'announce-game'){ openGames.set(data.code, { code: data.code, name: data.name, ownerPeerId: conn.peer }); broadcastLobbyList(); }
+        else if (data.type === 'remove-game'){ openGames.delete(data.code); broadcastLobbyList(); }
+      });
       conn.on('close', () => {
         lobbyClients.delete(conn.peer);
-        for (const [code, g] of openGames){
-          if (g.ownerPeerId === conn.peer) openGames.delete(code);
-        }
+        for (const [code, g] of openGames) if (g.ownerPeerId === conn.peer) openGames.delete(code);
         broadcastLobbyList();
       });
-      conn.on('open', () => {
-        conn.send({ type:'games-list', games: Array.from(openGames.values()) });
-      });
+      conn.on('open', () => conn.send({ type:'games-list', games: Array.from(openGames.values()) }));
     });
 
     lobbyHostPeer.on('error', (err) => {
-      if (hostSettled) return;
-      hostSettled = true;
-      console.warn('Could not become lobby host, falling back to client:', err && err.type);
-      try { lobbyHostPeer.destroy(); } catch(e){}
-      lobbyHostPeer = null;
-      connectAsLobbyClient(true);
+      if (hostSettled) return; hostSettled = true;
+      try { lobbyHostPeer.destroy(); } catch(e){} lobbyHostPeer = null;
+      // Prevent loop - lobby locked, fallback to direct code mode
+      openGamesEmpty.textContent = 'Lobby unavailable. Use direct codes.';
+      openGamesEmpty.classList.remove('hidden');
+      openGamesList.innerHTML = ''; openGamesList.appendChild(openGamesEmpty);
     });
-  }, jitter);
-}
-
-function handleLobbyHostMessage(conn, data){
-  if (!data || !data.type) return;
-  if (data.type === 'announce-game'){
-    openGames.set(data.code, { code: data.code, name: data.name, ownerPeerId: conn.peer });
-    broadcastLobbyList();
-  } else if (data.type === 'remove-game'){
-    openGames.delete(data.code);
-    broadcastLobbyList();
-  }
+  }, 150 + Math.floor(Math.random() * 400));
 }
 
 function broadcastLobbyList(){
   const list = Array.from(openGames.values());
-  for (const conn of lobbyClients.values()){
-    if (conn.open) conn.send({ type:'games-list', games: list });
-  }
+  for (const conn of lobbyClients.values()) if (conn.open) conn.send({ type:'games-list', games: list });
   if (isLobbyHost) renderOpenGamesFromList(list);
 }
 
-function renderOpenGames(){
-  if (isLobbyHost) renderOpenGamesFromList(Array.from(openGames.values()));
-}
+function renderOpenGames(){ if (isLobbyHost) renderOpenGamesFromList(Array.from(openGames.values())); }
 
 function renderOpenGamesFromList(list){
   const visible = list.filter(g => g.code !== myOpenGameCode);
   openGamesList.innerHTML = '';
   if (visible.length === 0){
     openGamesEmpty.textContent = 'No open games right now — create one!';
-    openGamesEmpty.classList.remove('hidden');
-    openGamesList.appendChild(openGamesEmpty);
-    return;
+    openGamesEmpty.classList.remove('hidden'); openGamesList.appendChild(openGamesEmpty); return;
   }
   openGamesEmpty.classList.add('hidden');
   visible.forEach(g => {
-    const row = document.createElement('div');
-    row.className = 'open-game-row';
+    const row = document.createElement('div'); row.className = 'open-game-row';
     row.innerHTML = `<div class="game-info"><div class="game-name">Game ${g.name}</div><div class="game-code">Code: ${g.code}</div></div><button class="action-btn">Join</button>`;
     row.querySelector('button').addEventListener('click', () => joinGameByCode(g.code));
     openGamesList.appendChild(row);
   });
 }
 
-btnCreateGame.addEventListener('click', createOnlineGame);
-
-function createOnlineGame(){
+btnCreateGame.addEventListener('click', () => {
   if (!peerLibReady()) return;
-  const code = randCode();
-  myOpenGameCode = code;
-  mode = 'online';
-  myMark = 'X';
-  showScreen('waiting');
-  waitingCode.textContent = code;
-
-  const url = new URL(window.location.href);
-  url.searchParams.set('game', code);
-  waitingLink.value = url.toString();
-
-  const gameHostPeer = new Peer(CODE_PREFIX + code, { debug: 0 });
-
-  gameHostPeer.on('open', () => {
-    if (isLobbyHost){
-      openGames.set(code, { code, name: code, ownerPeerId: myPeer ? myPeer.id : gameHostPeer.id });
-      broadcastLobbyList();
-    } else if (lobbyConn && lobbyConn.open){
-      lobbyConn.send({ type:'announce-game', code, name: code });
-    } else {
-      setTimeout(() => {
-        if (lobbyConn && lobbyConn.open){
-          lobbyConn.send({ type:'announce-game', code, name: code });
-        } else if (isLobbyHost){
-          openGames.set(code, { code, name: code, ownerPeerId: myPeer ? myPeer.id : gameHostPeer.id });
-          broadcastLobbyList();
-        }
-      }, 800);
-    }
+  initMyPeer(() => {
+    myOpenGameCode = myCode; mode = 'online'; myMark = 'X';
+    showScreen('waiting'); waitingCode.textContent = myCode;
+    const url = new URL(window.location.href); url.searchParams.set('game', myCode); waitingLink.value = url.toString();
+    
+    if (isLobbyHost){ openGames.set(myCode, { code: myCode, name: myCode, ownerPeerId: myPeer.id }); broadcastLobbyList(); }
+    else if (lobbyConn && lobbyConn.open) lobbyConn.send({ type:'announce-game', code: myCode, name: myCode });
   });
-
-  gameHostPeer.on('connection', (conn) => {
-    gameConn = conn;
-    const sendHello = () => { if (conn.open) conn.send({ type:'hello' }); };
-    conn.on('open', sendHello);
-    if (conn.open) sendHello();
-    setTimeout(sendHello, 500);
-    setTimeout(sendHello, 1500);
-    setupGameConnection(true);
-  });
-
-  gameHostPeer.on('error', (err) => {
-    console.error('Game host peer error:', err);
-    showToast('Connection error creating game.');
-  });
-
-  window._gameHostPeer = gameHostPeer;
-}
+});
 
 btnJoinCode.addEventListener('click', () => {
   const code = joinCodeInput.value.trim().toUpperCase();
-  if (!code) return;
-  joinGameByCode(code);
+  if (code) joinGameByCode(code);
 });
 joinCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnJoinCode.click(); });
 
 function joinGameByCode(code){
-  mode = 'online';
-  myMark = 'O';
+  code = code.trim().toUpperCase();
   if (!peerLibReady()) return;
+  
+  initMyPeer(() => {
+    mode = 'online'; myMark = 'O'; showScreen('game');
+    setConnStatus('pending', 'Connecting to host…');
+    turnBar.classList.add('hidden'); statusEl.classList.add('hidden'); bigBoardEl.classList.add('hidden');
+    gameControls.classList.add('hidden'); legendRow.classList.add('hidden'); starterPicker.classList.add('hidden');
+    leaveBtn.classList.remove('hidden');
 
-  const guestPeer = new Peer(undefined, { debug: 0 });
-  guestPeer.on('open', () => actuallyJoin(code, guestPeer));
-  guestPeer.on('error', () => showToast('Could not connect.'));
-}
+    const conn = myPeer.connect(CODE_PREFIX + code, { reliable: true });
+    gameConn = conn;
+    let hasConnected = false;
 
-function actuallyJoin(code, guestPeer){
-  showScreen('game');
-  setConnStatus('pending', 'Connecting to host…');
-  turnBar.classList.add('hidden');
-  statusEl.classList.add('hidden');
-  bigBoardEl.classList.add('hidden');
-  gameControls.classList.add('hidden');
-  legendRow.classList.add('hidden');
-  starterPicker.classList.add('hidden');
-  leaveBtn.classList.remove('hidden');
-
-  const conn = guestPeer.connect(CODE_PREFIX + code, { reliable: true });
-  gameConn = conn;
-  window._guestPeer = guestPeer;
-  let hasConnected = false;
-
-  function finalizeConnection(){
-    if (hasConnected) return;
-    hasConnected = true;
-    setupGameConnection(false);
-  }
-
-  conn.on('open', finalizeConnection);
-  conn.on('data', finalizeConnection);
-
-  setTimeout(() => {
-    if (!hasConnected){
-      setConnStatus('bad', 'Connection timed out.');
-      showToast('Host did not respond.');
-      teardownGameConn();
+    function finalizeConnection(){
+      if (hasConnected) return;
+      hasConnected = true; setupGameConnection(false);
     }
-  }, 7000);
-
-  conn.on('error', () => {
-    if (!hasConnected){
-      setConnStatus('bad', 'Could not reach that game.');
-      showToast('Game not found or offline.');
-    }
+    conn.on('open', finalizeConnection);
+    conn.on('data', (data) => {
+      finalizeConnection();
+      if (data && data.type === 'rejected') {
+        setConnStatus('bad', 'Game full or closed.'); showToast('Cannot join: ' + data.reason); teardownGameConn();
+      } else { handleGameMessage(data); }
+    });
+    conn.on('close', handleOpponentDisconnect);
+    conn.on('error', () => {
+      if (!hasConnected){ setConnStatus('bad', 'Could not reach that game.'); showToast('Game not found or offline.'); teardownGameConn(); }
+    });
+    setTimeout(() => {
+      if (!hasConnected){ setConnStatus('bad', 'Connection timed out.'); showToast('Host did not respond.'); teardownGameConn(); }
+    }, 7000);
   });
 }
 
 function setupGameConnection(isHost){
   setConnStatus('ok', isHost ? 'Opponent connected!' : 'Connected to host!');
-  showScreen('game');
-  leaveBtn.classList.remove('hidden');
-
-  gameConn.on('data', (data) => handleGameMessage(data));
-  gameConn.on('close', () => {
-    setConnStatus('bad', 'Opponent disconnected.');
-    showToast('Opponent left the game.');
-  });
-  gameConn.on('error', () => {
-    setConnStatus('bad', 'Connection error.');
-    resetToStarterPicker();
-  });
-
+  showScreen('game'); leaveBtn.classList.remove('hidden');
   if (isHost) announceGameFilled();
   resetToStarterPicker();
 }
 
-function sendToPeer(msg){
-  if (gameConn && gameConn.open) gameConn.send(msg);
-}
+function sendToPeer(msg){ if (gameConn && gameConn.open) gameConn.send(msg); }
 
 function handleGameMessage(data){
   if (!data || !data.type) return;
-  if (data.type === 'hello') return;
   if (data.type === 'start') beginGame(data.starter);
   else if (data.type === 'move'){ applyMove(data.boardIdx, data.cellIdx, data.mark); renderBoard(); }
   else if (data.type === 'reset') resetToStarterPicker();
 }
 
-function announceGameFilled(){
-  if (isLobbyHost){
-    openGames.delete(myOpenGameCode);
-    broadcastLobbyList();
-  } else if (lobbyConn && lobbyConn.open){
-    lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
-  }
-}
+function handleOpponentDisconnect() { setConnStatus('bad', 'Opponent disconnected.'); showToast('Opponent left the game.'); }
 
-function announceGameClosed(){
-  if (!myOpenGameCode) return;
-  if (isLobbyHost){
-    openGames.delete(myOpenGameCode);
-    broadcastLobbyList();
-  } else if (lobbyConn && lobbyConn.open){
-    lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
-  }
+function announceGameFilled(){
+  if (isLobbyHost){ openGames.delete(myOpenGameCode); broadcastLobbyList(); }
+  else if (lobbyConn && lobbyConn.open) lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
   myOpenGameCode = null;
 }
 
 function teardownGameConn(){
-  announceGameClosed();
-  if (gameConn){ try { gameConn.close(); } catch(e){} gameConn = null; }
-  connStatusRow.classList.add('hidden');
-  gameStarted = false;
-  mode = 'local';
-}
-
-function checkUrlForGameCode(){
-  const url = new URL(window.location.href);
-  const code = url.searchParams.get('game');
-  if (code){
-    showScreen('lobby');
-    connectToLobby();
-    setTimeout(() => joinGameByCode(code.toUpperCase()), 400);
+  if (myOpenGameCode){
+    if (isLobbyHost){ openGames.delete(myOpenGameCode); broadcastLobbyList(); }
+    else if (lobbyConn && lobbyConn.open) lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
   }
+  if (gameConn){ try { gameConn.close(); } catch(e){} gameConn = null; }
+  connStatusRow.classList.add('hidden'); gameStarted = false; myOpenGameCode = null;
 }
 
 btnCopyLink.addEventListener('click', () => {
-  waitingLink.select();
-  waitingLink.setSelectionRange(0, 99999);
+  waitingLink.select(); waitingLink.setSelectionRange(0, 99999);
   try { document.execCommand('copy'); showToast('Link copied!'); }
   catch(e){ if (navigator.clipboard) navigator.clipboard.writeText(waitingLink.value); showToast('Link copied!'); }
 });
 
+const checkUrlForGameCode = () => {
+  const code = new URL(window.location.href).searchParams.get('game');
+  if (code){ showScreen('lobby'); connectToLobby(); setTimeout(() => joinGameByCode(code), 400); }
+};
 checkUrlForGameCode();
 
 })();
