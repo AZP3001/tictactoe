@@ -30,35 +30,6 @@ Mega Tic-Tac-Toe follows the standard nested-board rules:
 
 The implementation tracks nine 3×3 boards, restricts moves to the active board, resolves completed small boards, and checks the resulting 3×3 mega board for the final winner or draw.
 
-## Play Locally
-
-No build step or package manager is required for the current version.
-
-### Option 1: Open the file directly
-
-Clone the repository and open `index.html` in a modern browser:
-
-```bash
-git clone https://github.com/AZP3001/tictactoe.git
-cd tictactoe
-```
-
-Then open `index.html` in your browser.
-
-### Option 2: Use a local web server
-
-A local server is useful when testing browser behavior and networking features:
-
-```bash
-python3 -m http.server 8000
-```
-
-Open:
-
-```text
-http://localhost:8000
-```
-
 ## Online Multiplayer
 
 Online play is implemented in the browser with **PeerJS 1.5.4**. The app creates a peer for each player, supports a lobby/open-game list, and also supports joining directly with a game code. The game can generate a shareable URL containing the game code.
