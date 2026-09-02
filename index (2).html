@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Mega TicTacToe</title>
+<style>
+  :root {
+    --orange: #ff9142;
+    --blue: #4287ff;
+    --bg: #14161c;
+    --panel: #1d2029;
+    --line: #333846;
+    --line-strong: #565f78;
+    --text: #eef0f5;
+    --dim: #7d8399;
+  }
+
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  html, body {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    touch-action: manipulation;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Full-screen split side-glow, sits behind everything */
+  .side-glow {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .side-glow .half {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .side-glow .half.left {
+    left: 0;
+    background: radial-gradient(ellipse at left center, rgba(66,135,255,0.55) 0%, rgba(66,135,255,0.0) 70%);
+  }
+
+  .side-glow .half.right {
+    right: 0;
+    background: radial-gradient(ellipse at right center, rgba(255,145,66,0.55) 0%, rgba(255,145,66,0.0) 70%);
+  }
+
+  .side-glow .half.left.lit { opacity: 1; }
+  .side-glow .half.right.lit { opacity: 1; }
+
+  .game-wrap, h1, .turn-bar, #status, .big-board, .controls, .legend {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* iPad 9th gen: 1640x2160px physical / 810x1080pt portrait, 1080x810pt landscape */
+
+  h1 {
+    font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  h1 span.o { color: var(--orange); }
+  h1 span.b { color: var(--blue); }
+
+  /* Main layout wrapper so we can flip to row layout in landscape */
+  .game-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 780px;
+  }
+
+  /* Turn indicator bar */
+  .turn-bar {
+    display: flex;
+    width: min(620px, 92vw);
+    height: 56px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
+    border: 1px solid var(--line-strong);
+    flex-shrink: 0;
+  }
+
+  .turn-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+    background: #23262f;
+    color: var(--dim);
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+
+  .turn-side.active.blue-active {
+    background: var(--blue);
+    color: #0b1220;
+  }
+
+  .turn-side.active.orange-active {
+    background: var(--orange);
+    color: #241200;
+  }
+
+  /* Status text */
+  #status {
+    min-height: 30px;
+    margin-bottom: 16px;
+    font-size: 1.15rem;
+    text-align: center;
+    color: var(--dim);
+    font-weight: 600;
+    flex-shrink: 0;
+    padding: 0 8px;
+  }
+
+  #status.win-orange { color: var(--orange); }
+  #status.win-blue { color: var(--blue); }
+
+  /* Big board */
+  .big-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    width: min(680px, 92vw);
+    max-height: min(680px, 60vh);
+    aspect-ratio: 1 / 1;
+    padding: 14px;
+    background: var(--panel);
+    border-radius: 20px;
+    border: 1px solid var(--line-strong);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+
+  .small-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #12141a;
+    border-radius: 10px;
+    padding: 6px;
+    position: relative;
+    border: 2px solid var(--line);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  }
+
+  .small-board.active-board {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.15), 0 0 14px rgba(255,255,255,0.15);
+  }
+
+  .small-board.won-orange,
+  .small-board.won-blue,
+  .small-board.drawn {
+    pointer-events: none;
+  }
+
+  .small-board.won-orange { background: rgba(255,145,66,0.12); }
+  .small-board.won-blue { background: rgba(66,135,255,0.12); }
+  .small-board.drawn { background: #1a1c22; }
+
+  .cell {
+    background: #1a1d26;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    aspect-ratio: 1 / 1;
+    transition: background 0.12s ease, transform 0.08s ease;
+    touch-action: manipulation;
+  }
+
+  .small-board.active-board .cell:not(.filled):active {
+    background: #282c38;
+    transform: scale(0.94);
+  }
+
+  @media (hover: hover) {
+    .small-board.active-board .cell:hover:not(.filled) {
+      background: #22252f;
+    }
+  }
+
+  .cell.filled { cursor: default; }
+
+  .cell svg {
+    width: 60%;
+    height: 60%;
+    pointer-events: none;
+  }
+
+  /* mark colors */
+  .mark-blue { stroke: var(--blue); }
+  .mark-orange { stroke: var(--orange); }
+
+  /* Overlay big mark on a won small board */
+  .small-board .overlay-mark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .small-board .overlay-mark svg {
+    width: 72%;
+    height: 72%;
+  }
+
+  .small-board .cell {
+    opacity: 1;
+  }
+
+  .small-board.won-orange .cell,
+  .small-board.won-blue .cell,
+  .small-board.drawn .cell {
+    opacity: 0.15;
+  }
+
+  /* Big board winning line highlight */
+  .big-board.game-over .small-board:not(.win-cell) {
+    opacity: 0.55;
+  }
+
+  .small-board.win-cell {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
+
+  /* Controls */
+  .controls {
+    margin-top: 22px;
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  button.reset-btn {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    padding: 13px 28px;
+    border-radius: 10px;
+    font-size: 1.05rem;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    transition: background 0.12s ease, transform 0.08s ease;
+    touch-action: manipulation;
+  }
+
+  @media (hover: hover) {
+    button.reset-btn:hover {
+      background: #262a36;
+    }
+  }
+
+  button.reset-btn:active {
+    transform: scale(0.96);
+    background: #262a36;
+  }
+
+  .legend {
+    display: flex;
+    gap: 26px;
+    margin-top: 18px;
+    font-size: 0.95rem;
+    color: var(--dim);
+    flex-shrink: 0;
+  }
+
+  .legend span { display: flex; align-items: center; gap: 7px; }
+  .legend svg { width: 18px; height: 18px; }
+
+  /* iPad 9th gen portrait, Safari toolbar visible (~810 x ~940-990pt usable) */
+  @media (min-width: 700px) and (max-width: 900px) and (orientation: portrait) {
+    body { justify-content: flex-start; padding-top: max(14px, env(safe-area-inset-top)); }
+    h1 { font-size: 1.9rem; margin-bottom: 8px; }
+    .turn-bar { height: 50px; margin-bottom: 14px; }
+    #status { margin-bottom: 14px; }
+    .big-board { width: min(680px, 86vw); max-height: 62dvh; }
+    .controls { margin-top: 16px; }
+    .legend { margin-top: 14px; margin-bottom: 8px; }
+  }
+
+  /* iPad 9th gen landscape, Safari toolbar visible (~1080 x ~680-730pt usable) */
+  @media (orientation: landscape) and (max-height: 800px) {
+    body { justify-content: flex-start; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .turn-bar { height: 38px; margin-bottom: 8px; }
+    .turn-side { font-size: 0.95rem; }
+    #status { font-size: 0.95rem; margin-bottom: 8px; min-height: 22px; }
+    .big-board { width: auto; height: min(66dvh, 560px); aspect-ratio: 1 / 1; padding: 10px; gap: 10px; }
+    .controls { margin-top: 8px; }
+    .legend { margin-top: 8px; font-size: 0.85rem; }
+  }
+
+  /* Small phones fallback */
+  @media (max-width: 420px) {
+    .small-board { gap: 3px; padding: 4px; }
+    .big-board { gap: 8px; padding: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="side-glow" id="sideGlow">
+  <div class="half left" id="glowLeft"></div>
+  <div class="half right" id="glowRight"></div>
+</div>
+
+<h1>Mega <span class="o">Tic</span>Tak<span class="b">Toe</span></h1>
+
+<div class="turn-bar">
+  <div class="turn-side" id="sideBlue">Blue — X</div>
+  <div class="turn-side" id="sideOrange">Orange — O</div>
+</div>
+
+<div id="status">Blue's turn — play anywhere</div>
+
+<div class="big-board" id="bigBoard"></div>
+
+<div class="controls">
+  <button class="reset-btn" id="resetBtn">New Game</button>
+</div>
+
+<div class="legend">
+  <span><svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/></svg> Blue plays X</span>
+  <span><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="mark-orange" stroke-width="3"/></svg> Orange plays O</span>
+</div>
+
+<script>
+(function () {
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  // state
+  // boards: array of 9 small boards, each an array of 9 cell values ('X','O',null)
+  // boardStatus: array of 9 -> null (in progress), 'X', 'O', or 'draw'
+  // activeBoard: index of small board that must be played next, or null = any open board
+  // currentPlayer: 'X' (blue) or 'O' (orange)
+  let boards, boardStatus, activeBoard, currentPlayer, gameOver;
+
+  const bigBoardEl = document.getElementById('bigBoard');
+  const statusEl = document.getElementById('status');
+  const sideBlueEl = document.getElementById('sideBlue');
+  const sideOrangeEl = document.getElementById('sideOrange');
+  const resetBtn = document.getElementById('resetBtn');
+  const glowLeft = document.getElementById('glowLeft');
+  const glowRight = document.getElementById('glowRight');
+
+  function xSVG(cls) {
+    return `<svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/></svg>`;
+  }
+  function oSVG(cls) {
+    return `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="${cls}" stroke-width="3.2"/></svg>`;
+  }
+
+  function initState() {
+    boards = Array.from({length: 9}, () => Array(9).fill(null));
+    boardStatus = Array(9).fill(null);
+    activeBoard = null;
+    currentPlayer = 'X'; // Blue starts
+    gameOver = false;
+  }
+
+  function checkWinner(cells) {
+    for (const [a,b,c] of WIN_LINES) {
+      if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
+        return { winner: cells[a], line: [a,b,c] };
+      }
+    }
+    if (cells.every(c => c !== null)) return { winner: 'draw', line: null };
+    return null;
+  }
+
+  function render() {
+    bigBoardEl.innerHTML = '';
+    bigBoardEl.classList.toggle('game-over', gameOver);
+
+    let overallWinLine = null;
+    if (gameOver) {
+      const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
+      if (macroResult && macroResult.winner !== 'draw') overallWinLine = macroResult.line;
+    }
+
+    for (let b = 0; b < 9; b++) {
+      const boardEl = document.createElement('div');
+      boardEl.className = 'small-board';
+      boardEl.dataset.index = b;
+
+      const status = boardStatus[b];
+      if (status === 'X') boardEl.classList.add('won-blue');
+      else if (status === 'O') boardEl.classList.add('won-orange');
+      else if (status === 'draw') boardEl.classList.add('drawn');
+
+      if (!gameOver && !status && (activeBoard === null || activeBoard === b)) {
+        boardEl.classList.add('active-board');
+      }
+
+      if (overallWinLine && overallWinLine.includes(b)) {
+        boardEl.classList.add('win-cell');
+      }
+
+      for (let c = 0; c < 9; c++) {
+        const cellEl = document.createElement('div');
+        cellEl.className = 'cell';
+        cellEl.dataset.board = b;
+        cellEl.dataset.cell = c;
+
+        const val = boards[b][c];
+        if (val === 'X') {
+          cellEl.classList.add('filled');
+          cellEl.innerHTML = xSVG('mark-blue');
+        } else if (val === 'O') {
+          cellEl.classList.add('filled');
+          cellEl.innerHTML = oSVG('mark-orange');
+        } else {
+          cellEl.addEventListener('click', onCellClick);
+        }
+        boardEl.appendChild(cellEl);
+      }
+
+      if (status === 'X' || status === 'O') {
+        const overlay = document.createElement('div');
+        overlay.className = 'overlay-mark';
+        overlay.innerHTML = status === 'X' ? xSVG('mark-blue') : oSVG('mark-orange');
+        boardEl.appendChild(overlay);
+      }
+
+      bigBoardEl.appendChild(boardEl);
+    }
+
+    updateTurnUI();
+  }
+
+  function updateTurnUI() {
+    sideBlueEl.classList.toggle('active', !gameOver && currentPlayer === 'X');
+    sideBlueEl.classList.toggle('blue-active', !gameOver && currentPlayer === 'X');
+    sideOrangeEl.classList.toggle('active', !gameOver && currentPlayer === 'O');
+    sideOrangeEl.classList.toggle('orange-active', !gameOver && currentPlayer === 'O');
+
+    glowLeft.classList.toggle('lit', !gameOver && currentPlayer === 'X');
+    glowRight.classList.toggle('lit', !gameOver && currentPlayer === 'O');
+
+    statusEl.classList.remove('win-orange', 'win-blue');
+
+    if (gameOver) {
+      const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
+      if (macroResult && macroResult.winner === 'draw') {
+        statusEl.textContent = "It's a draw!";
+      } else if (macroResult) {
+        const who = macroResult.winner === 'X' ? 'Blue' : 'Orange';
+        statusEl.textContent = `${who} wins the game! 🎉`;
+        statusEl.classList.add(macroResult.winner === 'X' ? 'win-blue' : 'win-orange');
+      }
+      return;
+    }
+
+    const who = currentPlayer === 'X' ? 'Blue' : 'Orange';
+    if (activeBoard === null) {
+      statusEl.textContent = `${who}'s turn — play in any open square`;
+    } else {
+      const pos = boardPositionName(activeBoard);
+      statusEl.textContent = `${who}'s turn — must play in the ${pos} square`;
+    }
+  }
+
+  function boardPositionName(idx) {
+    const names = [
+      'top-left', 'top-middle', 'top-right',
+      'middle-left', 'center', 'middle-right',
+      'bottom-left', 'bottom-middle', 'bottom-right'
+    ];
+    return names[idx];
+  }
+
+  function onCellClick(e) {
+    if (gameOver) return;
+    const boardIdx = parseInt(e.currentTarget.dataset.board, 10);
+    const cellIdx = parseInt(e.currentTarget.dataset.cell, 10);
+
+    // validate move legality
+    if (boardStatus[boardIdx]) return; // board already decided
+    if (boards[boardIdx][cellIdx]) return; // cell taken
+    if (activeBoard !== null && activeBoard !== boardIdx) return; // must play in active board
+
+    // place mark
+    boards[boardIdx][cellIdx] = currentPlayer;
+
+    // check small board result
+    const result = checkWinner(boards[boardIdx]);
+    if (result) {
+      boardStatus[boardIdx] = result.winner; // 'X' | 'O' | 'draw'
+    }
+
+    // check macro win
+    const macroCells = boardStatus.map(s => s === 'draw' ? null : s);
+    const macroResult = checkWinner(macroCells);
+    if (macroResult) {
+      gameOver = true;
+    } else {
+      // determine next active board based on cell position played
+      const nextBoard = cellIdx;
+      activeBoard = boardStatus[nextBoard] ? null : nextBoard;
+      // switch player
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    }
+
+    render();
+  }
+
+  resetBtn.addEventListener('click', () => {
+    initState();
+    render();
+  });
+
+  initState();
+  render();
+})();
+</script>
+
+</body>
+</html>
