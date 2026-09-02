@@ -709,6 +709,7 @@
 </div>
 
 <div class="screen hidden" id="screenGame">
+  <h1 id="gameTitle">Mega <span class="o">Tic</span>Tak<span class="b">Toe</span></h1>
 
   <div class="conn-status hidden" id="connStatusRow">
     <span class="dot" id="connDot"></span>
@@ -720,7 +721,12 @@
     <div class="starter-chip orange-pick" id="pickOrange">Orange starts</div>
   </div>
 
-  <div id="status" class="hidden">Blue's turn</div>
+  <div class="turn-bar hidden" id="turnBar">
+    <div class="turn-side" id="sideBlue">Blue — X</div>
+    <div class="turn-side" id="sideOrange">Orange — O</div>
+  </div>
+
+  <div id="status" class="hidden">Blue's turn — play anywhere</div>
 
   <div class="big-board hidden" id="bigBoard"></div>
 
