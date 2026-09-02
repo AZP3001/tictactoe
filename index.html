@@ -8,645 +8,131 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>Mega TicTacToe</title>
 <style>
-  :root {
-    --orange: #ff9142;
-    --blue: #4287ff;
-    --bg: #14161c;
-    --panel: #1d2029;
-    --panel2: #262a36;
-    --line: #333846;
-    --line-strong: #565f78;
-    --text: #eef0f5;
-    --dim: #7d8399;
-    --green: #4caf6d;
-    --red: #ff5a5a;
-  }
-
-  * {
-    box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  html, body {
-    height: 100%;
-    overscroll-behavior: none;
-  }
-
-  body {
-    margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-    touch-action: manipulation;
-    position: relative;
-    overflow: hidden;
-  }
-
-  input, button { font-family: inherit; }
-
-  .side-glow {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  .side-glow .half {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 50%;
-    opacity: 0;
-    transition: opacity 0.35s ease;
-  }
-
-  .side-glow .half.left {
-    left: 0;
-    background: radial-gradient(ellipse at left center, rgba(66,135,255,0.55) 0%, rgba(66,135,255,0.0) 70%);
-  }
-
-  .side-glow .half.right {
-    right: 0;
-    background: radial-gradient(ellipse at right center, rgba(255,145,66,0.55) 0%, rgba(255,145,66,0.0) 70%);
-  }
-
-  .side-glow .half.left.lit { opacity: 1; }
-  .side-glow .half.right.lit { opacity: 1; }
-
-  .screen {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 780px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .hidden { display: none !important; }
-
-  h1 {
-    font-size: clamp(1.5rem, 3.2vw, 2.4rem);
-    margin: 0 0 6px;
-    letter-spacing: 1px;
-    text-align: center;
-  }
-
-  h1 span.o { color: var(--orange); }
-  h1 span.b { color: var(--blue); }
-
-  h2 {
-    font-size: 1.2rem;
-    margin: 0 0 18px;
-    color: var(--dim);
-    font-weight: 600;
-    text-align: center;
-  }
-
-  .home-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: min(360px, 88vw);
-    margin-top: 10px;
-  }
-
-  .big-choice-btn {
-    background: var(--panel);
-    border: 1px solid var(--line-strong);
-    color: var(--text);
-    padding: 20px;
-    border-radius: 14px;
-    font-size: 1.15rem;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    transition: background 0.15s ease, transform 0.08s ease;
-  }
-
-  .big-choice-btn small {
-    font-weight: 500;
-    font-size: 0.8rem;
-    color: var(--dim);
-  }
-
-  .big-choice-btn:active { transform: scale(0.97); background: var(--panel2); }
-  @media (hover: hover) {
-    .big-choice-btn:hover { background: var(--panel2); }
-  }
-
-  .lobby-box {
-    width: min(560px, 92vw);
-    background: var(--panel);
-    border: 1px solid var(--line-strong);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 16px;
-  }
-
-  .lobby-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-  }
-
-  .lobby-row:last-child { margin-bottom: 0; }
-
-  .text-input {
-    flex: 1;
-    background: #12141a;
-    border: 1px solid var(--line);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 1rem;
-    min-width: 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .text-input:focus { outline: 2px solid var(--blue); }
-
-  .action-btn {
-    background: var(--blue);
-    color: #0b1220;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: filter 0.12s ease, transform 0.08s ease;
-  }
-
-  .action-btn.orange { background: var(--orange); }
-  .action-btn.ghost {
-    background: var(--panel2);
-    color: var(--text);
-    border: 1px solid var(--line-strong);
-  }
-
-  .action-btn:active { transform: scale(0.96); filter: brightness(0.9); }
-  @media (hover: hover) {
-    .action-btn:hover { filter: brightness(1.1); }
-  }
-
-  .action-btn:disabled { opacity: 0.5; cursor: default; }
-
-  .lobby-section-title {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--dim);
-    margin: 4px 0 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .refresh-btn {
-    background: none;
-    border: none;
-    color: var(--dim);
-    cursor: pointer;
-    font-size: 0.85rem;
-    text-decoration: underline;
-  }
-
-  .open-games-list {
-    width: min(560px, 92vw);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 34vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .open-game-row {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .open-game-row .game-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .open-game-row .game-name {
-    font-weight: 700;
-    font-size: 1rem;
-  }
-
-  .open-game-row .game-code {
-    font-size: 0.8rem;
-    color: var(--dim);
-    letter-spacing: 1px;
-  }
-
-  .empty-note {
-    color: var(--dim);
-    font-size: 0.9rem;
-    text-align: center;
-    padding: 18px 0;
-  }
-
-  .conn-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--dim);
-    margin-bottom: 14px;
-  }
-
-  .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
-    background: var(--dim);
-    flex-shrink: 0;
-  }
-
-  .dot.ok { background: var(--green); }
-  .dot.bad { background: var(--red); }
-  .dot.pending { background: #e0b34c; animation: pulse 1.2s infinite ease-in-out; }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-  }
-
-  .back-link {
-    background: none;
-    border: none;
-    color: var(--dim);
-    font-size: 0.9rem;
-    cursor: pointer;
-    margin-bottom: 14px;
-    text-decoration: underline;
-    align-self: flex-start;
-  }
-
-  .waiting-box {
-    width: min(420px, 90vw);
-    background: var(--panel);
-    border: 1px solid var(--line-strong);
-    border-radius: 16px;
-    padding: 30px 24px;
-    text-align: center;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--line);
-    border-top-color: var(--blue);
-    border-radius: 50%;
-    margin: 0 auto 18px;
-    animation: spin 0.9s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .share-code {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: 4px;
-    background: #12141a;
-    border: 1px dashed var(--line-strong);
-    border-radius: 10px;
-    padding: 14px;
-    margin: 14px 0;
-    color: var(--text);
-  }
-
-  .share-link-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .share-link-row .text-input {
-    text-transform: none;
-    font-size: 0.8rem;
-    letter-spacing: 0;
-  }
-
-  .starter-picker {
-    display: flex;
-    width: min(620px, 92vw);
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .starter-chip {
-    flex: 1;
-    padding: 16px;
-    border-radius: 12px;
-    border: 2px solid var(--line-strong);
-    background: var(--panel);
-    color: var(--dim);
-    font-weight: 700;
-    font-size: 1rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .starter-chip.blue-pick.selected {
-    background: var(--blue);
-    color: #0b1220;
-    border-color: var(--blue);
-  }
-
-  .starter-chip.orange-pick.selected {
-    background: var(--orange);
-    color: #241200;
-    border-color: var(--orange);
-  }
-
-  .starter-chip:not(.selectable) {
-    cursor: default;
-    opacity: 0.6;
-  }
-
-  .starter-chip.selectable:active { transform: scale(0.97); }
-
-  .turn-bar {
-    display: flex;
-    width: min(620px, 92vw);
-    height: 56px;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.35);
-    border: 1px solid var(--line-strong);
-    flex-shrink: 0;
-  }
-
-  .turn-side {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.15rem;
-    letter-spacing: 0.5px;
-    background: #23262f;
-    color: var(--dim);
-    transition: background 0.25s ease, color 0.25s ease;
-    gap: 6px;
-  }
-
-  .turn-side .you-tag {
-    font-size: 0.7rem;
-    font-weight: 600;
-    background: rgba(255,255,255,0.15);
-    padding: 2px 6px;
-    border-radius: 5px;
-  }
-
-  .turn-side.active.blue-active {
-    background: var(--blue);
-    color: #0b1220;
-  }
-
-  .turn-side.active.orange-active {
-    background: var(--orange);
-    color: #241200;
-  }
-
-  #status {
-    min-height: 30px;
-    margin-bottom: 12px;
-    font-size: 1.15rem;
-    text-align: center;
-    color: var(--dim);
-    font-weight: 600;
-    flex-shrink: 0;
-    padding: 0 8px;
-  }
-
-  #status.win-orange { color: var(--orange); }
-  #status.win-blue { color: var(--blue); }
-
-  .big-board {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    width: min(680px, 92vw);
-    max-height: min(680px, 58vh);
-    aspect-ratio: 1 / 1;
-    padding: 14px;
-    background: var(--panel);
-    border-radius: 20px;
-    border: 1px solid var(--line-strong);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-  }
-
-  .big-board.locked { opacity: 0.7; pointer-events: none; }
-
-  .small-board {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    background: #12141a;
-    border-radius: 10px;
-    padding: 6px;
-    position: relative;
-    border: 2px solid var(--line);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  }
-
-  .small-board.active-board {
-    border-color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(255,255,255,0.15), 0 0 14px rgba(255,255,255,0.15);
-  }
-
-  .small-board.won-orange,
-  .small-board.won-blue,
-  .small-board.drawn {
-    pointer-events: none;
-  }
-
-  .small-board.won-orange { background: rgba(255,145,66,0.12); }
-  .small-board.won-blue { background: rgba(66,135,255,0.12); }
-  .small-board.drawn { background: #1a1c22; }
-
-  .cell {
-    background: #1a1d26;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    aspect-ratio: 1 / 1;
-    transition: background 0.12s ease, transform 0.08s ease;
-    touch-action: manipulation;
-  }
-
-  .small-board.active-board .cell:not(.filled):active {
-    background: #282c38;
-    transform: scale(0.94);
-  }
-
-  @media (hover: hover) {
-    .small-board.active-board .cell:hover:not(.filled) {
-      background: #22252f;
-    }
-  }
-
-  .cell.filled { cursor: default; }
-
-  .cell svg {
-    width: 60%;
-    height: 60%;
-    pointer-events: none;
-  }
-
-  .mark-blue { stroke: var(--blue); }
-  .mark-orange { stroke: var(--orange); }
-
-  .small-board .overlay-mark {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 3;
-  }
-
-  .small-board .overlay-mark svg {
-    width: 72%;
-    height: 72%;
-  }
-
-  .small-board .cell { opacity: 1; }
-
-  .small-board.won-orange .cell,
-  .small-board.won-blue .cell,
-  .small-board.drawn .cell {
-    opacity: 0.15;
-  }
-
-  .big-board.game-over .small-board:not(.win-cell) { opacity: 0.55; }
-
-  .small-board.win-cell {
-    outline: 3px solid #fff;
-    outline-offset: 2px;
-  }
-
-  .controls {
-    margin-top: 22px;
-    display: flex;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-
-  button.reset-btn {
-    background: var(--panel);
-    color: var(--text);
-    border: 1px solid var(--line-strong);
-    padding: 13px 28px;
-    border-radius: 10px;
-    font-size: 1.05rem;
-    cursor: pointer;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    transition: background 0.12s ease, transform 0.08s ease;
-    touch-action: manipulation;
-  }
-
-  @media (hover: hover) {
-    button.reset-btn:hover { background: #262a36; }
-  }
-
-  button.reset-btn:active { transform: scale(0.96); background: #262a36; }
-
-  .legend {
-    display: flex;
-    gap: 26px;
-    margin-top: 18px;
-    font-size: 0.95rem;
-    color: var(--dim);
-    flex-shrink: 0;
-  }
-
-  .legend span { display: flex; align-items: center; gap: 7px; }
-  .legend svg { width: 18px; height: 18px; }
-
-  .toast {
-    position: fixed;
-    bottom: max(24px, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--panel2);
-    border: 1px solid var(--line-strong);
-    color: var(--text);
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-    z-index: 20;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s ease;
-  }
-
-  .toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-
-  @media (min-width: 700px) and (max-width: 900px) and (orientation: portrait) {
-    body { justify-content: flex-start; padding-top: max(14px, env(safe-area-inset-top)); }
-    h1 { font-size: 1.9rem; margin-bottom: 8px; }
-    .turn-bar { height: 50px; margin-bottom: 14px; }
-    #status { margin-bottom: 14px; }
-    .big-board { width: min(680px, 86vw); max-height: 58dvh; }
-    .controls { margin-top: 16px; }
-    .legend { margin-top: 14px; margin-bottom: 8px; }
-  }
-
-  @media (orientation: landscape) and (max-height: 800px) {
-    body { justify-content: flex-start; padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-    h1 { font-size: 1.4rem; margin-bottom: 4px; }
-    .turn-bar { height: 38px; margin-bottom: 8px; }
-    .turn-side { font-size: 0.95rem; }
-    #status { font-size: 0.95rem; margin-bottom: 8px; min-height: 22px; }
-    .big-board { width: auto; height: min(58dvh, 520px); aspect-ratio: 1 / 1; padding: 10px; gap: 10px; }
-    .controls { margin-top: 8px; }
-    .legend { margin-top: 8px; font-size: 0.85rem; }
-  }
-
-  @media (max-width: 420px) {
-    .small-board { gap: 3px; padding: 4px; }
-    .big-board { gap: 8px; padding: 8px; }
-  }
+:root{
+  --orange:#ff9142; --blue:#4287ff; --bg:#14161c; --panel:#1d2029; --panel2:#262a36;
+  --line:#333846; --line-strong:#565f78; --text:#eef0f5; --dim:#7d8399; --green:#4caf6d; --red:#ff5a5a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+html,body{height:100%;overscroll-behavior:none;}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;background:var(--bg);color:var(--text);
+  font-family:-apple-system,"Segoe UI",system-ui,sans-serif;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  touch-action:manipulation;position:relative;overflow:hidden;
+}
+input,button{font-family:inherit;}
+.side-glow{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.side-glow .half{position:absolute;top:0;bottom:0;width:50%;opacity:0;transition:opacity .35s ease;}
+.side-glow .half.left{left:0;background:radial-gradient(ellipse at left center, rgba(66,135,255,.55) 0%, rgba(66,135,255,0) 70%);}
+.side-glow .half.right{right:0;background:radial-gradient(ellipse at right center, rgba(255,145,66,.55) 0%, rgba(255,145,66,0) 70%);}
+.side-glow .half.left.lit,.side-glow .half.right.lit{opacity:1;}
+.screen{position:relative;z-index:1;width:100%;max-width:780px;display:flex;flex-direction:column;align-items:center;}
+.hidden{display:none !important;}
+h1{font-size:clamp(1.5rem,3.2vw,2.4rem);margin:0 0 6px;letter-spacing:1px;text-align:center;}
+h1 span.o{color:var(--orange);} h1 span.b{color:var(--blue);}
+h2{font-size:1.2rem;margin:0 0 18px;color:var(--dim);font-weight:600;text-align:center;}
+.home-buttons{display:flex;flex-direction:column;gap:14px;width:min(360px,88vw);margin-top:10px;}
+.big-choice-btn{background:var(--panel);border:1px solid var(--line-strong);color:var(--text);padding:20px;border-radius:14px;font-size:1.15rem;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:background .15s ease, transform .08s ease;}
+.big-choice-btn small{font-weight:500;font-size:.8rem;color:var(--dim);}
+.big-choice-btn:active{transform:scale(.97);background:var(--panel2);}
+@media (hover:hover){.big-choice-btn:hover{background:var(--panel2);}}
+.lobby-box{width:min(560px,92vw);background:var(--panel);border:1px solid var(--line-strong);border-radius:16px;padding:20px;margin-bottom:16px;}
+.lobby-row{display:flex;gap:10px;margin-bottom:10px;}
+.lobby-row:last-child{margin-bottom:0;}
+.text-input{flex:1;background:#12141a;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:12px 14px;font-size:1rem;min-width:0;text-transform:uppercase;letter-spacing:1px;}
+.text-input:focus{outline:2px solid var(--blue);}
+.action-btn{background:var(--blue);color:#0b1220;border:none;border-radius:8px;padding:12px 20px;font-weight:700;font-size:.95rem;cursor:pointer;white-space:nowrap;transition:filter .12s ease, transform .08s ease;}
+.action-btn.orange{background:var(--orange);}
+.action-btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line-strong);}
+.action-btn:active{transform:scale(.96);filter:brightness(.9);}
+@media (hover:hover){.action-btn:hover{filter:brightness(1.1);}}
+.action-btn:disabled{opacity:.5;cursor:default;}
+.lobby-section-title{font-size:.85rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:4px 0 10px;display:flex;align-items:center;justify-content:space-between;}
+.refresh-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.85rem;text-decoration:underline;}
+.open-games-list{width:min(560px,92vw);display:flex;flex-direction:column;gap:8px;max-height:34vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.open-game-row{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.open-game-row .game-info{display:flex;flex-direction:column;gap:2px;}
+.open-game-row .game-name{font-weight:700;font-size:1rem;}
+.open-game-row .game-code{font-size:.8rem;color:var(--dim);letter-spacing:1px;}
+.empty-note{color:var(--dim);font-size:.9rem;text-align:center;padding:18px 0;}
+.conn-status{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--dim);margin-bottom:14px;}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--dim);flex-shrink:0;}
+.dot.ok{background:var(--green);} .dot.bad{background:var(--red);}
+.dot.pending{background:#e0b34c;animation:pulse 1.2s infinite ease-in-out;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.back-link{background:none;border:none;color:var(--dim);font-size:.9rem;cursor:pointer;margin-bottom:14px;text-decoration:underline;align-self:flex-start;}
+.waiting-box{width:min(420px,90vw);background:var(--panel);border:1px solid var(--line-strong);border-radius:16px;padding:30px 24px;text-align:center;}
+.spinner{width:40px;height:40px;border:4px solid var(--line);border-top-color:var(--blue);border-radius:50%;margin:0 auto 18px;animation:spin .9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.share-code{font-size:2rem;font-weight:800;letter-spacing:4px;background:#12141a;border:1px dashed var(--line-strong);border-radius:10px;padding:14px;margin:14px 0;color:var(--text);}
+.share-link-row{display:flex;gap:8px;margin-top:10px;}
+.share-link-row .text-input{text-transform:none;font-size:.8rem;letter-spacing:0;}
+.starter-picker{display:flex;width:min(620px,92vw);gap:12px;margin-bottom:16px;}
+.starter-chip{flex:1;padding:16px;border-radius:12px;border:2px solid var(--line-strong);background:var(--panel);color:var(--dim);font-weight:700;font-size:1rem;text-align:center;cursor:pointer;transition:all .15s ease;}
+.starter-chip.blue-pick.selected{background:var(--blue);color:#0b1220;border-color:var(--blue);}
+.starter-chip.orange-pick.selected{background:var(--orange);color:#241200;border-color:var(--orange);}
+.starter-chip:not(.selectable){cursor:default;opacity:.6;}
+.starter-chip.selectable:active{transform:scale(.97);}
+.turn-bar{display:flex;width:min(620px,92vw);height:56px;border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:0 4px 18px rgba(0,0,0,.35);border:1px solid var(--line-strong);flex-shrink:0;}
+.turn-side{flex:1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.15rem;letter-spacing:.5px;background:#23262f;color:var(--dim);transition:background .25s ease, color .25s ease;gap:6px;}
+.turn-side .you-tag{font-size:.7rem;font-weight:600;background:rgba(255,255,255,.15);padding:2px 6px;border-radius:5px;}
+.turn-side.active.blue-active{background:var(--blue);color:#0b1220;}
+.turn-side.active.orange-active{background:var(--orange);color:#241200;}
+#status{min-height:30px;margin-bottom:12px;font-size:1.15rem;text-align:center;color:var(--dim);font-weight:600;flex-shrink:0;padding:0 8px;}
+#status.win-orange{color:var(--orange);} #status.win-blue{color:var(--blue);}
+.big-board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:min(680px,92vw);max-height:min(680px,58vh);aspect-ratio:1/1;padding:14px;background:var(--panel);border-radius:20px;border:1px solid var(--line-strong);box-shadow:0 10px 30px rgba(0,0,0,.4);}
+.big-board.locked{opacity:.7;pointer-events:none;}
+.small-board{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#12141a;border-radius:10px;padding:6px;position:relative;border:2px solid var(--line);transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;}
+.small-board.active-board{border-color:#ffffff;box-shadow:0 0 0 2px rgba(255,255,255,.15), 0 0 14px rgba(255,255,255,.15);}
+.small-board.won-orange,.small-board.won-blue,.small-board.drawn{pointer-events:none;}
+.small-board.won-orange{background:rgba(255,145,66,.12);}
+.small-board.won-blue{background:rgba(66,135,255,.12);}
+.small-board.drawn{background:#1a1c22;}
+.cell{background:#1a1d26;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;aspect-ratio:1/1;transition:background .12s ease, transform .08s ease;touch-action:manipulation;}
+.small-board.active-board .cell:not(.filled):active{background:#282c38;transform:scale(.94);}
+@media (hover:hover){.small-board.active-board .cell:hover:not(.filled){background:#22252f;}}
+.cell.filled{cursor:default;}
+.cell svg{width:60%;height:60%;pointer-events:none;}
+.mark-blue{stroke:var(--blue);} .mark-orange{stroke:var(--orange);}
+.small-board .overlay-mark{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3;}
+.small-board .overlay-mark svg{width:72%;height:72%;}
+.small-board .cell{opacity:1;}
+.small-board.won-orange .cell,.small-board.won-blue .cell,.small-board.drawn .cell{opacity:.15;}
+.big-board.game-over .small-board:not(.win-cell){opacity:.55;}
+.small-board.win-cell{outline:3px solid #fff;outline-offset:2px;}
+.controls{margin-top:22px;display:flex;gap:12px;flex-shrink:0;}
+button.reset-btn{background:var(--panel);color:var(--text);border:1px solid var(--line-strong);padding:13px 28px;border-radius:10px;font-size:1.05rem;cursor:pointer;font-weight:600;letter-spacing:.3px;transition:background .12s ease, transform .08s ease;touch-action:manipulation;}
+@media (hover:hover){button.reset-btn:hover{background:#262a36;}}
+button.reset-btn:active{transform:scale(.96);background:#262a36;}
+.legend{display:flex;gap:26px;margin-top:18px;font-size:.95rem;color:var(--dim);flex-shrink:0;}
+.legend span{display:flex;align-items:center;gap:7px;}
+.legend svg{width:18px;height:18px;}
+.toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line-strong);color:var(--text);padding:10px 18px;border-radius:10px;font-size:.9rem;z-index:20;opacity:0;pointer-events:none;transition:opacity .25s ease, transform .25s ease;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+@media (min-width:700px) and (max-width:900px) and (orientation:portrait){
+  body{justify-content:flex-start;padding-top:max(14px,env(safe-area-inset-top));}
+  h1{font-size:1.9rem;margin-bottom:8px;}
+  .turn-bar{height:50px;margin-bottom:14px;}
+  #status{margin-bottom:14px;}
+  .big-board{width:min(680px,86vw);max-height:58dvh;}
+  .controls{margin-top:16px;}
+  .legend{margin-top:14px;margin-bottom:8px;}
+}
+@media (orientation:landscape) and (max-height:800px){
+  body{justify-content:flex-start;padding-top:max(8px,env(safe-area-inset-top));padding-bottom:max(8px,env(safe-area-inset-bottom));}
+  h1{font-size:1.4rem;margin-bottom:4px;}
+  .turn-bar{height:38px;margin-bottom:8px;}
+  .turn-side{font-size:.95rem;}
+  #status{font-size:.95rem;margin-bottom:8px;min-height:22px;}
+  .big-board{width:auto;height:min(58dvh,520px);aspect-ratio:1/1;padding:10px;gap:10px;}
+  .controls{margin-top:8px;}
+  .legend{margin-top:8px;font-size:.85rem;}
+}
+@media (max-width:420px){
+  .small-board{gap:3px;padding:4px;}
+  .big-board{gap:8px;padding:8px;}
+}
 </style>
 </head>
 <body>
@@ -657,35 +143,27 @@
 </div>
 
 <div class="screen" id="screenHome">
-  <h1>Mega <span class="o">Tic</span>Tak<span class="b">Toe</span></h1>
+  <h1>Mega <span class="o">Tic</span><span class="b">Tak</span>Toe</h1>
   <h2>Choose how to play</h2>
   <div class="home-buttons">
-    <button class="big-choice-btn" id="btnLocal">
-      Local Game
-      <small>Same device, pass and play</small>
-    </button>
-    <button class="big-choice-btn" id="btnOnline">
-      Play Online
-      <small>Lobby, room codes &amp; links</small>
-    </button>
+    <button class="big-choice-btn" id="btnLocal">Local Game<small>Same device, pass and play</small></button>
+    <button class="big-choice-btn" id="btnOnline">Play Online<small>Lobby, room codes &amp; links</small></button>
   </div>
 </div>
 
 <div class="screen hidden" id="screenLobby">
   <button class="back-link" id="lobbyBack">&larr; Back</button>
-  <h1 style="font-size:1.6rem;">Online Lobby</h1>
-
+  <h1 style="font-size:1.6rem">Online Lobby</h1>
   <div class="lobby-box">
     <div class="lobby-row">
-      <button class="action-btn" id="btnCreateGame" style="flex:1;">+ Create Game</button>
+      <button class="action-btn" id="btnCreateGame" style="flex:1">+ Create Game</button>
     </div>
     <div class="lobby-row">
       <input class="text-input" id="joinCodeInput" placeholder="ENTER CODE" maxlength="6">
       <button class="action-btn orange" id="btnJoinCode">Join</button>
     </div>
   </div>
-
-  <div class="lobby-section-title" style="width:min(560px,92vw);">
+  <div class="lobby-section-title" style="width:min(560px,92vw)">
     <span id="openGamesLabel">Open Games</span>
     <button class="refresh-btn" id="btnRefreshLobby">refresh</button>
   </div>
@@ -698,9 +176,9 @@
   <button class="back-link" id="waitingBack">&larr; Cancel</button>
   <div class="waiting-box">
     <div class="spinner"></div>
-    <h2 style="margin-bottom:6px;">Waiting for someone to join…</h2>
+    <h2 style="margin-bottom:6px">Waiting for someone to join…</h2>
     <div class="share-code" id="waitingCode">------</div>
-    <div style="font-size:0.85rem; color:var(--dim);">Share this code, or send the link:</div>
+    <div style="font-size:.85rem;color:var(--dim)">Share this code, or send the link:</div>
     <div class="share-link-row">
       <input class="text-input" id="waitingLink" readonly>
       <button class="action-btn ghost" id="btnCopyLink">Copy</button>
@@ -709,7 +187,7 @@
 </div>
 
 <div class="screen hidden" id="screenGame">
-  <h1 id="gameTitle">Mega <span class="o">Tic</span>Tak<span class="b">Toe</span></h1>
+  <h1 id="gameTitle">Mega <span class="o">Tic</span><span class="b">Tak</span>Toe</h1>
 
   <div class="conn-status hidden" id="connStatusRow">
     <span class="dot" id="connDot"></span>
@@ -736,8 +214,14 @@
   </div>
 
   <div class="legend hidden" id="legendRow">
-    <span><svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/></svg> Blue plays X</span>
-    <span><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="mark-orange" stroke-width="3"/></svg> Orange plays O</span>
+    <span>
+      <svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="mark-blue" stroke-width="3" stroke-linecap="round"/></svg>
+      Blue plays X
+    </span>
+    <span>
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="mark-orange" stroke-width="3"/></svg>
+      Orange plays O
+    </span>
   </div>
 </div>
 
@@ -745,783 +229,732 @@
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" crossorigin="anonymous"></script>
 <script>
-  // If the primary CDN fails to load PeerJS for any reason, fall back to jsDelivr.
-  window.addEventListener('DOMContentLoaded', function () {
-    if (typeof Peer === 'undefined') {
-      var fallback = document.createElement('script');
-      fallback.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js';
-      fallback.crossOrigin = 'anonymous';
-      fallback.onerror = function () {
-        console.error('PeerJS failed to load from both CDNs.');
-      };
-      document.head.appendChild(fallback);
-    }
-  });
+window.addEventListener('DOMContentLoaded', function(){
+  if (typeof Peer === 'undefined') {
+    var fallback = document.createElement('script');
+    fallback.src = "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js";
+    fallback.crossOrigin = "anonymous";
+    fallback.onerror = function(){ console.error('PeerJS failed to load from both CDNs.'); };
+    document.head.appendChild(fallback);
+  }
+});
+window.addEventListener('error', function(e){
+  console.error('Uncaught error:', e.message, e.filename, e.lineno + ':' + e.colno, e.error);
+});
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled promise rejection:', e.reason);
+});
 </script>
 <script>
-  // Surface real error info instead of the generic "Script error." message
-  window.addEventListener('error', function (e) {
-    console.error('Uncaught error:', e.message, e.filename, e.lineno + ':' + e.colno, e.error);
-  });
-  window.addEventListener('unhandledrejection', function (e) {
-    console.error('Unhandled promise rejection:', e.reason);
-  });
-</script>
-<script>
-(function () {
-  const WIN_LINES = [
-    [0,1,2],[3,4,5],[6,7,8],
-    [0,3,6],[1,4,7],[2,5,8],
-    [0,4,8],[2,4,6]
-  ];
+(function(){
+'use strict';
 
-  const LOBBY_ID = 'megattt-lobby-broadcaster-v1';
-  const CODE_PREFIX = 'megattt-';
+const WINLINES = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
 
-  const screens = {
-    home: document.getElementById('screenHome'),
-    lobby: document.getElementById('screenLobby'),
-    waiting: document.getElementById('screenWaiting'),
-    game: document.getElementById('screenGame'),
-  };
+const LOBBY_HOST_ID = "megattt-lobby-broadcaster-v1";
+const CODE_PREFIX = "megattt-";
 
-  const glowLeft = document.getElementById('glowLeft');
-  const glowRight = document.getElementById('glowRight');
+const screens = {
+  home: document.getElementById('screenHome'),
+  lobby: document.getElementById('screenLobby'),
+  waiting: document.getElementById('screenWaiting'),
+  game: document.getElementById('screenGame'),
+};
 
-  const btnLocal = document.getElementById('btnLocal');
-  const btnOnline = document.getElementById('btnOnline');
-  const lobbyBack = document.getElementById('lobbyBack');
-  const waitingBack = document.getElementById('waitingBack');
+const glowLeft = document.getElementById('glowLeft');
+const glowRight = document.getElementById('glowRight');
 
-  const btnCreateGame = document.getElementById('btnCreateGame');
-  const joinCodeInput = document.getElementById('joinCodeInput');
-  const btnJoinCode = document.getElementById('btnJoinCode');
-  const openGamesList = document.getElementById('openGamesList');
-  const openGamesEmpty = document.getElementById('openGamesEmpty');
-  const openGamesLabel = document.getElementById('openGamesLabel');
-  const btnRefreshLobby = document.getElementById('btnRefreshLobby');
+const btnLocal = document.getElementById('btnLocal');
+const btnOnline = document.getElementById('btnOnline');
+const lobbyBack = document.getElementById('lobbyBack');
+const waitingBack = document.getElementById('waitingBack');
+const btnCreateGame = document.getElementById('btnCreateGame');
+const joinCodeInput = document.getElementById('joinCodeInput');
+const btnJoinCode = document.getElementById('btnJoinCode');
+const openGamesList = document.getElementById('openGamesList');
+const openGamesEmpty = document.getElementById('openGamesEmpty');
+const openGamesLabel = document.getElementById('openGamesLabel');
+const btnRefreshLobby = document.getElementById('btnRefreshLobby');
+const waitingCode = document.getElementById('waitingCode');
+const waitingLink = document.getElementById('waitingLink');
+const btnCopyLink = document.getElementById('btnCopyLink');
 
-  const waitingCode = document.getElementById('waitingCode');
-  const waitingLink = document.getElementById('waitingLink');
-  const btnCopyLink = document.getElementById('btnCopyLink');
+const connStatusRow = document.getElementById('connStatusRow');
+const connDot = document.getElementById('connDot');
+const connText = document.getElementById('connText');
+const starterPicker = document.getElementById('starterPicker');
+const pickBlue = document.getElementById('pickBlue');
+const pickOrange = document.getElementById('pickOrange');
+const turnBar = document.getElementById('turnBar');
+const sideBlueEl = document.getElementById('sideBlue');
+const sideOrangeEl = document.getElementById('sideOrange');
+const statusEl = document.getElementById('status');
+const bigBoardEl = document.getElementById('bigBoard');
+const gameControls = document.getElementById('gameControls');
+const resetBtn = document.getElementById('resetBtn');
+const leaveBtn = document.getElementById('leaveBtn');
+const legendRow = document.getElementById('legendRow');
+const toastEl = document.getElementById('toast');
 
-  const connStatusRow = document.getElementById('connStatusRow');
-  const connDot = document.getElementById('connDot');
-  const connText = document.getElementById('connText');
+let toastTimer = null;
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 2600);
+}
 
-  const starterPicker = document.getElementById('starterPicker');
-  const pickBlue = document.getElementById('pickBlue');
-  const pickOrange = document.getElementById('pickOrange');
-
-  const turnBar = document.getElementById('turnBar');
-  const sideBlueEl = document.getElementById('sideBlue');
-  const sideOrangeEl = document.getElementById('sideOrange');
-  const statusEl = document.getElementById('status');
-  const bigBoardEl = document.getElementById('bigBoard');
-  const gameControls = document.getElementById('gameControls');
-  const resetBtn = document.getElementById('resetBtn');
-  const leaveBtn = document.getElementById('leaveBtn');
-  const legendRow = document.getElementById('legendRow');
-  const toastEl = document.getElementById('toast');
-
-  let toastTimer = null;
-  function showToast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+function peerLibReady(){
+  if (typeof Peer === 'undefined') {
+    showToast('Networking library failed to load. Check your connection and reload.');
+    return false;
   }
+  return true;
+}
 
-  function peerLibReady() {
-    if (typeof Peer === 'undefined') {
-      showToast('Networking library failed to load. Check your connection and reload.');
-      return false;
-    }
-    return true;
-  }
+function showScreen(name){
+  Object.entries(screens).forEach(([key, el]) => el.classList.toggle('hidden', key !== name));
+}
 
-  function showScreen(name) {
-    Object.entries(screens).forEach(([key, el]) => {
-      el.classList.toggle('hidden', key !== name);
-    });
-  }
+let boards, boardStatus, activeBoard, currentPlayer, gameOver, starter;
+let mode = 'local';
+let myMark = null;
+let gameStarted = false;
 
-  let boards, boardStatus, activeBoard, currentPlayer, gameOver, starter;
-  let mode = 'local';
-  let myMark = null;
-  let gameStarted = false;
+function xSVG(cls){
+  return `<svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/></svg>`;
+}
+function oSVG(cls){
+  return `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="${cls}" stroke-width="3.2"/></svg>`;
+}
 
-  function xSVG(cls) {
-    return `<svg viewBox="0 0 24 24" fill="none"><line x1="5" y1="5" x2="19" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" class="${cls}" stroke-width="3.2" stroke-linecap="round"/></svg>`;
-  }
-  function oSVG(cls) {
-    return `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="7" class="${cls}" stroke-width="3.2"/></svg>`;
-  }
+function initBoardState(startingPlayer){
+  boards = Array.from({length:9}, () => Array(9).fill(null));
+  boardStatus = Array(9).fill(null);
+  activeBoard = null;
+  currentPlayer = startingPlayer || 'X';
+  gameOver = false;
+}
 
-  function initBoardState(startingPlayer) {
-    boards = Array.from({length: 9}, () => Array(9).fill(null));
-    boardStatus = Array(9).fill(null);
-    activeBoard = null;
-    currentPlayer = startingPlayer || 'X';
-    gameOver = false;
-  }
-
-  function checkWinner(cells) {
-    for (const [a,b,c] of WIN_LINES) {
-      if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]) {
-        return { winner: cells[a], line: [a,b,c] };
-      }
-    }
-    if (cells.every(c => c !== null)) return { winner: 'draw', line: null };
-    return null;
-  }
-
-  function boardPositionName(idx) {
-    const names = [
-      'top-left', 'top-middle', 'top-right',
-      'middle-left', 'center', 'middle-right',
-      'bottom-left', 'bottom-middle', 'bottom-right'
-    ];
-    return names[idx];
-  }
-
-  function renderBoard() {
-    bigBoardEl.innerHTML = '';
-    bigBoardEl.classList.toggle('game-over', gameOver);
-
-    let overallWinLine = null;
-    if (gameOver) {
-      const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
-      if (macroResult && macroResult.winner !== 'draw') overallWinLine = macroResult.line;
-    }
-
-    const locked = mode === 'online' && (gameOver || currentPlayer !== myMark);
-    bigBoardEl.classList.toggle('locked', locked && !gameOver);
-
-    for (let b = 0; b < 9; b++) {
-      const boardEl = document.createElement('div');
-      boardEl.className = 'small-board';
-      boardEl.dataset.index = b;
-
-      const status = boardStatus[b];
-      if (status === 'X') boardEl.classList.add('won-blue');
-      else if (status === 'O') boardEl.classList.add('won-orange');
-      else if (status === 'draw') boardEl.classList.add('drawn');
-
-      if (!gameOver && !status && (activeBoard === null || activeBoard === b)) {
-        boardEl.classList.add('active-board');
-      }
-
-      if (overallWinLine && overallWinLine.includes(b)) {
-        boardEl.classList.add('win-cell');
-      }
-
-      for (let c = 0; c < 9; c++) {
-        const cellEl = document.createElement('div');
-        cellEl.className = 'cell';
-        cellEl.dataset.board = b;
-        cellEl.dataset.cell = c;
-
-        const val = boards[b][c];
-        if (val === 'X') {
-          cellEl.classList.add('filled');
-          cellEl.innerHTML = xSVG('mark-blue');
-        } else if (val === 'O') {
-          cellEl.classList.add('filled');
-          cellEl.innerHTML = oSVG('mark-orange');
-        } else {
-          cellEl.addEventListener('click', onCellClick);
-        }
-        boardEl.appendChild(cellEl);
-      }
-
-      if (status === 'X' || status === 'O') {
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay-mark';
-        overlay.innerHTML = status === 'X' ? xSVG('mark-blue') : oSVG('mark-orange');
-        boardEl.appendChild(overlay);
-      }
-
-      bigBoardEl.appendChild(boardEl);
-    }
-
-    updateTurnUI();
-  }
-
-  function updateTurnUI() {
-    sideBlueEl.classList.toggle('active', !gameOver && currentPlayer === 'X');
-    sideBlueEl.classList.toggle('blue-active', !gameOver && currentPlayer === 'X');
-    sideOrangeEl.classList.toggle('active', !gameOver && currentPlayer === 'O');
-    sideOrangeEl.classList.toggle('orange-active', !gameOver && currentPlayer === 'O');
-
-    glowLeft.classList.toggle('lit', !gameOver && currentPlayer === 'X');
-    glowRight.classList.toggle('lit', !gameOver && currentPlayer === 'O');
-
-    let blueTag = sideBlueEl.querySelector('.you-tag');
-    let orangeTag = sideOrangeEl.querySelector('.you-tag');
-    if (mode === 'online') {
-      if (myMark === 'X' && !blueTag) {
-        sideBlueEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
-      } else if (myMark === 'O' && !orangeTag) {
-        sideOrangeEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
-      }
-    } else {
-      if (blueTag) blueTag.remove();
-      if (orangeTag) orangeTag.remove();
-    }
-
-    statusEl.classList.remove('win-orange', 'win-blue');
-
-    if (gameOver) {
-      const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
-      if (macroResult && macroResult.winner === 'draw') {
-        statusEl.textContent = "It's a draw!";
-      } else if (macroResult) {
-        const who = macroResult.winner === 'X' ? 'Blue' : 'Orange';
-        let suffix = ' 🎉';
-        if (mode === 'online' && macroResult.winner === myMark) suffix = " — that's you! 🎉";
-        statusEl.textContent = `${who} wins the game!${suffix}`;
-        statusEl.classList.add(macroResult.winner === 'X' ? 'win-blue' : 'win-orange');
-      }
-      return;
-    }
-
-    const who = currentPlayer === 'X' ? 'Blue' : 'Orange';
-    let turnSuffix = '';
-    if (mode === 'online') {
-      turnSuffix = currentPlayer === myMark ? ' (your turn)' : ' (waiting…)';
-    }
-    if (activeBoard === null) {
-      statusEl.textContent = `${who}'s turn${turnSuffix} — play in any open square`;
-    } else {
-      const pos = boardPositionName(activeBoard);
-      statusEl.textContent = `${who}'s turn${turnSuffix} — must play in the ${pos} square`;
+function checkWinner(cells){
+  for (const [a,b,c] of WINLINES){
+    if (cells[a] && cells[a] === cells[b] && cells[a] === cells[c]){
+      return { winner: cells[a], line: [a,b,c] };
     }
   }
+  if (cells.every(c => c !== null)) return { winner: 'draw', line: null };
+  return null;
+}
 
-  function applyMove(boardIdx, cellIdx, mark) {
-    boards[boardIdx][cellIdx] = mark;
+function boardPositionName(idx){
+  const names = ['top-left','top-middle','top-right','middle-left','center','middle-right','bottom-left','bottom-middle','bottom-right'];
+  return names[idx];
+}
 
-    const result = checkWinner(boards[boardIdx]);
-    if (result) {
-      boardStatus[boardIdx] = result.winner;
-    }
+function renderBoard(){
+  bigBoardEl.innerHTML = '';
+  bigBoardEl.classList.toggle('game-over', gameOver);
 
-    const macroCells = boardStatus.map(s => s === 'draw' ? null : s);
-    const macroResult = checkWinner(macroCells);
-    if (macroResult) {
-      gameOver = true;
-    } else {
-      const nextBoard = cellIdx;
-      activeBoard = boardStatus[nextBoard] ? null : nextBoard;
-      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    }
+  let overallWinLine = null;
+  if (gameOver){
+    const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
+    if (macroResult && macroResult.winner !== 'draw') overallWinLine = macroResult.line;
   }
 
-  function onCellClick(e) {
-    if (gameOver || !gameStarted) return;
-    const boardIdx = parseInt(e.currentTarget.dataset.board, 10);
-    const cellIdx = parseInt(e.currentTarget.dataset.cell, 10);
+  const locked = (mode === 'online') && !gameOver && (currentPlayer !== myMark);
+  bigBoardEl.classList.toggle('locked', locked && !gameOver);
 
-    if (boardStatus[boardIdx]) return;
-    if (boards[boardIdx][cellIdx]) return;
-    if (activeBoard !== null && activeBoard !== boardIdx) return;
+  for (let b = 0; b < 9; b++){
+    const boardEl = document.createElement('div');
+    boardEl.className = 'small-board';
+    boardEl.dataset.index = b;
 
-    if (mode === 'online') {
-      if (currentPlayer !== myMark) return;
-      applyMove(boardIdx, cellIdx, myMark);
-      renderBoard();
-      sendToPeer({ type: 'move', boardIdx, cellIdx, mark: myMark });
-    } else {
-      applyMove(boardIdx, cellIdx, currentPlayer);
-      renderBoard();
+    const status = boardStatus[b];
+    if (status === 'X') boardEl.classList.add('won-blue');
+    else if (status === 'O') boardEl.classList.add('won-orange');
+    else if (status === 'draw') boardEl.classList.add('drawn');
+
+    if (!gameOver && !status && (activeBoard === null || activeBoard === b)){
+      boardEl.classList.add('active-board');
     }
+    if (overallWinLine && overallWinLine.includes(b)) boardEl.classList.add('win-cell');
+
+    for (let c = 0; c < 9; c++){
+      const cellEl = document.createElement('div');
+      cellEl.className = 'cell';
+      cellEl.dataset.board = b;
+      cellEl.dataset.cell = c;
+      const val = boards[b][c];
+      if (val === 'X'){ cellEl.classList.add('filled'); cellEl.innerHTML = xSVG('mark-blue'); }
+      else if (val === 'O'){ cellEl.classList.add('filled'); cellEl.innerHTML = oSVG('mark-orange'); }
+      else { cellEl.addEventListener('click', onCellClick); }
+      boardEl.appendChild(cellEl);
+    }
+
+    if (status === 'X' || status === 'O'){
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay-mark';
+      overlay.innerHTML = status === 'X' ? xSVG('mark-blue') : oSVG('mark-orange');
+      boardEl.appendChild(overlay);
+    }
+
+    bigBoardEl.appendChild(boardEl);
   }
 
-  function beginGame(startingPlayer) {
-    gameStarted = true;
-    starter = startingPlayer;
-    initBoardState(startingPlayer);
-    starterPicker.classList.add('hidden');
-    turnBar.classList.remove('hidden');
-    statusEl.classList.remove('hidden');
-    bigBoardEl.classList.remove('hidden');
-    gameControls.classList.remove('hidden');
-    legendRow.classList.remove('hidden');
+  updateTurnUI();
+}
+
+function updateTurnUI(){
+  sideBlueEl.classList.toggle('active', !gameOver && currentPlayer === 'X');
+  sideBlueEl.classList.toggle('blue-active', !gameOver && currentPlayer === 'X');
+  sideOrangeEl.classList.toggle('active', !gameOver && currentPlayer === 'O');
+  sideOrangeEl.classList.toggle('orange-active', !gameOver && currentPlayer === 'O');
+  glowLeft.classList.toggle('lit', !gameOver && currentPlayer === 'X');
+  glowRight.classList.toggle('lit', !gameOver && currentPlayer === 'O');
+
+  let blueTag = sideBlueEl.querySelector('.you-tag');
+  let orangeTag = sideOrangeEl.querySelector('.you-tag');
+  if (mode === 'online'){
+    if (myMark === 'X' && !blueTag) sideBlueEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
+    else if (myMark === 'O' && !orangeTag) sideOrangeEl.insertAdjacentHTML('beforeend', '<span class="you-tag">YOU</span>');
+  } else {
+    if (blueTag) blueTag.remove();
+    if (orangeTag) orangeTag.remove();
+  }
+
+  statusEl.classList.remove('win-orange','win-blue');
+
+  if (gameOver){
+    const macroResult = checkWinner(boardStatus.map(s => s === 'draw' ? null : s));
+    if (macroResult && macroResult.winner === 'draw'){
+      statusEl.textContent = "It's a draw!";
+    } else if (macroResult){
+      const who = macroResult.winner === 'X' ? 'Blue' : 'Orange';
+      let suffix = '';
+      if (mode === 'online' && macroResult.winner === myMark) suffix = " — that's you!";
+      statusEl.textContent = `${who} wins the game!${suffix}`;
+      statusEl.classList.add(macroResult.winner === 'X' ? 'win-blue' : 'win-orange');
+    }
+    return;
+  }
+
+  const who = currentPlayer === 'X' ? 'Blue' : 'Orange';
+  let turnSuffix = '';
+  if (mode === 'online') turnSuffix = currentPlayer === myMark ? ' — your turn' : ' — waiting';
+  if (activeBoard === null){
+    statusEl.textContent = `${who}'s turn${turnSuffix} — play anywhere`;
+  } else {
+    const pos = boardPositionName(activeBoard);
+    statusEl.textContent = `${who}'s turn${turnSuffix} — must play in the ${pos} square`;
+  }
+}
+
+function applyMove(boardIdx, cellIdx, mark){
+  boards[boardIdx][cellIdx] = mark;
+  const result = checkWinner(boards[boardIdx]);
+  if (result) boardStatus[boardIdx] = result.winner;
+
+  const macroCells = boardStatus.map(s => s === 'draw' ? null : s);
+  const macroResult = checkWinner(macroCells);
+  if (macroResult){
+    gameOver = true;
+  } else {
+    const nextBoard = cellIdx;
+    activeBoard = boardStatus[nextBoard] ? null : nextBoard;
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+  }
+}
+
+function onCellClick(e){
+  if (gameOver || !gameStarted) return;
+  const boardIdx = parseInt(e.currentTarget.dataset.board, 10);
+  const cellIdx = parseInt(e.currentTarget.dataset.cell, 10);
+  if (boardStatus[boardIdx]) return;
+  if (boards[boardIdx][cellIdx]) return;
+  if (activeBoard !== null && activeBoard !== boardIdx) return;
+
+  if (mode === 'online'){
+    if (currentPlayer !== myMark) return;
+    applyMove(boardIdx, cellIdx, myMark);
+    renderBoard();
+    sendToPeer({ type:'move', boardIdx, cellIdx, mark: myMark });
+  } else {
+    applyMove(boardIdx, cellIdx, currentPlayer);
     renderBoard();
   }
+}
 
-  function resetToStarterPicker() {
-    gameStarted = false;
-    turnBar.classList.add('hidden');
-    statusEl.classList.add('hidden');
-    bigBoardEl.classList.add('hidden');
-    gameControls.classList.add('hidden');
-    legendRow.classList.add('hidden');
+function beginGame(startingPlayer){
+  gameStarted = true;
+  starter = startingPlayer;
+  initBoardState(startingPlayer);
+  starterPicker.classList.add('hidden');
+  turnBar.classList.remove('hidden');
+  statusEl.classList.remove('hidden');
+  bigBoardEl.classList.remove('hidden');
+  gameControls.classList.remove('hidden');
+  legendRow.classList.remove('hidden');
+  renderBoard();
+}
 
-    starterPicker.classList.remove('hidden');
-    if (mode === 'local') {
-      renderStarterPicker(null, true);
-    } else {
-      const iAmHost = myMark === 'X';
-      renderStarterPicker(null, iAmHost);
-    }
+function resetToStarterPicker(){
+  gameStarted = false;
+  turnBar.classList.add('hidden');
+  statusEl.classList.add('hidden');
+  bigBoardEl.classList.add('hidden');
+  gameControls.classList.add('hidden');
+  legendRow.classList.add('hidden');
+  starterPicker.classList.remove('hidden');
+
+  if (mode === 'local'){
+    renderStarterPicker(null, true);
+  } else {
+    const iAmHost = myMark === 'X';
+    renderStarterPicker(null, iAmHost);
   }
+}
 
-  function renderStarterPicker(selected, selectable) {
-    pickBlue.classList.toggle('selected', selected === 'X');
-    pickOrange.classList.toggle('selected', selected === 'O');
-    pickBlue.classList.toggle('selectable', !!selectable);
-    pickOrange.classList.toggle('selectable', !!selectable);
-    pickBlue.textContent = selectable ? 'Blue starts' : (mode === 'online' ? 'Waiting for host…' : 'Blue starts');
-    pickOrange.textContent = selectable ? 'Orange starts' : (mode === 'online' ? 'Waiting for host…' : 'Orange starts');
-  }
+function renderStarterPicker(selected, selectable){
+  pickBlue.classList.toggle('selected', selected === 'X');
+  pickOrange.classList.toggle('selected', selected === 'O');
+  pickBlue.classList.toggle('selectable', !!selectable);
+  pickOrange.classList.toggle('selectable', !!selectable);
+  pickBlue.textContent = selectable ? 'Blue starts' : (mode === 'online' ? 'Waiting for host…' : 'Blue starts');
+  pickOrange.textContent = selectable ? 'Orange starts' : (mode === 'online' ? 'Waiting for host…' : 'Orange starts');
+}
 
-  pickBlue.addEventListener('click', () => {
-    if (!pickBlue.classList.contains('selectable')) return;
-    chooseStarter('X');
-  });
-  pickOrange.addEventListener('click', () => {
-    if (!pickOrange.classList.contains('selectable')) return;
-    chooseStarter('O');
-  });
+pickBlue.addEventListener('click', () => { if (!pickBlue.classList.contains('selectable')) return; chooseStarter('X'); });
+pickOrange.addEventListener('click', () => { if (!pickOrange.classList.contains('selectable')) return; chooseStarter('O'); });
 
-  function chooseStarter(mark) {
-    if (mode === 'online') {
-      sendToPeer({ type: 'start', starter: mark });
-    }
-    beginGame(mark);
-  }
+function chooseStarter(mark){
+  if (mode === 'online') sendToPeer({ type:'start', starter: mark });
+  beginGame(mark);
+}
 
-  resetBtn.addEventListener('click', () => {
-    if (mode === 'online') {
-      sendToPeer({ type: 'reset' });
-    }
-    resetToStarterPicker();
-  });
+resetBtn.addEventListener('click', () => {
+  if (mode === 'online') sendToPeer({ type:'reset' });
+  resetToStarterPicker();
+});
 
-  btnLocal.addEventListener('click', () => {
-    mode = 'local';
-    myMark = null;
-    connStatusRow.classList.add('hidden');
-    leaveBtn.classList.add('hidden');
-    showScreen('game');
-    resetToStarterPicker();
-  });
+btnLocal.addEventListener('click', () => {
+  mode = 'local';
+  myMark = null;
+  connStatusRow.classList.add('hidden');
+  leaveBtn.classList.add('hidden');
+  showScreen('game');
+  resetToStarterPicker();
+});
 
-  let myPeer = null;
-  let gameConn = null;
-  let lobbyConn = null;
-  let isLobbyHost = false;
-  let lobbyPeer = null;
-  const lobbyClients = new Map();
-  const openGames = new Map();
-  let myOpenGameCode = null;
+let myPeer = null;
+let gameConn = null;
+let lobbyConn = null;
+let isLobbyHost = false;
+let lobbyHostPeer = null;
+const lobbyClients = new Map();
+const openGames = new Map();
+let myOpenGameCode = null;
 
-  function randCode() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let s = '';
-    for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
-    return s;
-  }
+let lobbyReconnectTimer = null;
+let lobbyReconnectDelay = 1000;
+const LOBBY_RECONNECT_MAX_DELAY = 10000;
 
-  function setConnStatus(state, text) {
-    connStatusRow.classList.remove('hidden');
-    connDot.className = 'dot ' + state;
-    connText.textContent = text;
-  }
+function randCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 5; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
 
-  btnOnline.addEventListener('click', () => {
-    showScreen('lobby');
-    connectToLobby();
-  });
+function setConnStatus(state, text){
+  connStatusRow.classList.remove('hidden');
+  connDot.className = `dot ${state}`;
+  connText.textContent = text;
+}
 
-  lobbyBack.addEventListener('click', () => {
-    showScreen('home');
-  });
+btnOnline.addEventListener('click', () => {
+  showScreen('lobby');
+  connectToLobby();
+});
+lobbyBack.addEventListener('click', () => showScreen('home'));
+waitingBack.addEventListener('click', () => { teardownGameConn(); showScreen('lobby'); });
+leaveBtn.addEventListener('click', () => { teardownGameConn(); showScreen('lobby'); });
+btnRefreshLobby.addEventListener('click', () => connectToLobby(true));
 
-  waitingBack.addEventListener('click', () => {
-    teardownGameConn();
-    showScreen('lobby');
-  });
+function clearLobbyReconnectTimer(){
+  if (lobbyReconnectTimer){ clearTimeout(lobbyReconnectTimer); lobbyReconnectTimer = null; }
+}
 
-  leaveBtn.addEventListener('click', () => {
-    teardownGameConn();
-    showScreen('lobby');
-  });
-
-  btnRefreshLobby.addEventListener('click', () => {
+function scheduleLobbyReconnect(){
+  clearLobbyReconnectTimer();
+  lobbyReconnectTimer = setTimeout(() => {
+    lobbyReconnectDelay = Math.min(lobbyReconnectDelay * 1.6, LOBBY_RECONNECT_MAX_DELAY);
     connectToLobby(true);
-  });
+  }, lobbyReconnectDelay);
+}
 
-  function connectToLobby(forceReconnect) {
-    if (lobbyConn && lobbyConn.open && !forceReconnect) {
-      renderOpenGames();
-      return;
-    }
-    openGamesEmpty.textContent = 'Connecting to lobby…';
-    openGamesEmpty.classList.remove('hidden');
-    openGamesList.innerHTML = '';
-    openGamesList.appendChild(openGamesEmpty);
+function connectToLobby(forceReconnect){
+  if (!peerLibReady()) return;
+  clearLobbyReconnectTimer();
 
-    tryBecomeLobbyHost();
+  if (!forceReconnect && ((lobbyConn && lobbyConn.open) || isLobbyHost)){
+    renderOpenGames();
+    return;
   }
 
-  function tryBecomeLobbyHost() {
-    if (!peerLibReady()) return;
-    if (lobbyPeer) { try { lobbyPeer.destroy(); } catch(e){} }
-    lobbyPeer = new Peer(LOBBY_ID, { debug: 0 });
+  openGamesEmpty.textContent = 'Connecting to lobby…';
+  openGamesEmpty.classList.remove('hidden');
+  openGamesList.innerHTML = '';
+  openGamesList.appendChild(openGamesEmpty);
 
-    let settled = false;
+  connectAsLobbyClient(false);
+}
 
-    lobbyPeer.on('open', () => {
+function connectAsLobbyClient(isRetryFromHostFailure){
+  if (!peerLibReady()) return;
+  isLobbyHost = false;
+
+  if (myPeer && myPeer.open){
+    openLobbyConnection();
+    return;
+  }
+  if (myPeer && !myPeer.destroyed){
+    myPeer.once('open', openLobbyConnection);
+    return;
+  }
+
+  myPeer = new Peer(undefined, { debug: 0 });
+  myPeer.on('open', openLobbyConnection);
+  myPeer.on('error', (err) => {
+    console.error('Lobby client peer error:', err);
+    openGamesEmpty.textContent = 'Could not reach lobby. Retrying…';
+    scheduleLobbyReconnect();
+  });
+}
+
+function openLobbyConnection(){
+  if (lobbyConn){ try { lobbyConn.close(); } catch(e){} lobbyConn = null; }
+
+  const conn = myPeer.connect(LOBBY_HOST_ID, { reliable: true });
+  let settled = false;
+  let joinAttemptTimeout = null;
+
+  conn.on('open', () => {
+    settled = true;
+    clearTimeout(joinAttemptTimeout);
+    lobbyConn = conn;
+    lobbyReconnectDelay = 1000;
+    openGamesLabel.textContent = 'Open Games';
+    if (myOpenGameCode){
+      lobbyConn.send({ type:'announce-game', code: myOpenGameCode, name: myOpenGameCode });
+    }
+  });
+
+  conn.on('data', (data) => {
+    if (data && data.type === 'games-list') renderOpenGamesFromList(data.games);
+  });
+
+  conn.on('error', () => {
+    if (settled) return;
+    clearTimeout(joinAttemptTimeout);
+    attemptBecomeLobbyHost();
+  });
+
+  conn.on('close', () => {
+    if (lobbyConn === conn) lobbyConn = null;
+    openGamesEmpty.textContent = 'Disconnected from lobby. Reconnecting…';
+    scheduleLobbyReconnect();
+  });
+
+  joinAttemptTimeout = setTimeout(() => {
+    if (settled) return;
+    try { conn.close(); } catch(e){}
+    attemptBecomeLobbyHost();
+  }, 4000);
+}
+
+function attemptBecomeLobbyHost(){
+  if (!peerLibReady()) return;
+  if (isLobbyHost) return;
+
+  const jitter = 150 + Math.floor(Math.random() * 400);
+  setTimeout(() => {
+    if (lobbyConn && lobbyConn.open) return;
+
+    if (lobbyHostPeer){ try { lobbyHostPeer.destroy(); } catch(e){} lobbyHostPeer = null; }
+    lobbyHostPeer = new Peer(LOBBY_HOST_ID, { debug: 0 });
+    let hostSettled = false;
+
+    lobbyHostPeer.on('open', () => {
+      hostSettled = true;
       isLobbyHost = true;
-      settled = true;
+      lobbyReconnectDelay = 1000;
       openGamesLabel.textContent = 'Open Games';
       renderOpenGames();
     });
 
-    lobbyPeer.on('connection', (conn) => {
+    lobbyHostPeer.on('connection', (conn) => {
       if (!isLobbyHost) return;
       lobbyClients.set(conn.peer, conn);
       conn.on('data', (data) => handleLobbyHostMessage(conn, data));
       conn.on('close', () => {
         lobbyClients.delete(conn.peer);
-        for (const [code, g] of openGames) {
+        for (const [code, g] of openGames){
           if (g.ownerPeerId === conn.peer) openGames.delete(code);
         }
         broadcastLobbyList();
       });
       conn.on('open', () => {
-        conn.send({ type: 'games-list', games: Array.from(openGames.values()) });
+        conn.send({ type:'games-list', games: Array.from(openGames.values()) });
       });
     });
 
-    lobbyPeer.on('error', (err) => {
-      if (settled) return;
-      settled = true;
-      connectAsLobbyClient();
+    lobbyHostPeer.on('error', (err) => {
+      if (hostSettled) return;
+      hostSettled = true;
+      console.warn('Could not become lobby host, falling back to client:', err && err.type);
+      try { lobbyHostPeer.destroy(); } catch(e){}
+      lobbyHostPeer = null;
+      connectAsLobbyClient(true);
     });
+  }, jitter);
+}
+
+function handleLobbyHostMessage(conn, data){
+  if (!data || !data.type) return;
+  if (data.type === 'announce-game'){
+    openGames.set(data.code, { code: data.code, name: data.name, ownerPeerId: conn.peer });
+    broadcastLobbyList();
+  } else if (data.type === 'remove-game'){
+    openGames.delete(data.code);
+    broadcastLobbyList();
   }
+}
 
-  function handleLobbyHostMessage(conn, data) {
-    if (!data || !data.type) return;
-    if (data.type === 'announce-game') {
-      openGames.set(data.code, {
-        code: data.code,
-        name: data.name,
-        ownerPeerId: conn.peer
-      });
+function broadcastLobbyList(){
+  const list = Array.from(openGames.values());
+  for (const conn of lobbyClients.values()){
+    if (conn.open) conn.send({ type:'games-list', games: list });
+  }
+  if (isLobbyHost) renderOpenGamesFromList(list);
+}
+
+function renderOpenGames(){
+  if (isLobbyHost) renderOpenGamesFromList(Array.from(openGames.values()));
+}
+
+function renderOpenGamesFromList(list){
+  const visible = list.filter(g => g.code !== myOpenGameCode);
+  openGamesList.innerHTML = '';
+  if (visible.length === 0){
+    openGamesEmpty.textContent = 'No open games right now — create one!';
+    openGamesEmpty.classList.remove('hidden');
+    openGamesList.appendChild(openGamesEmpty);
+    return;
+  }
+  openGamesEmpty.classList.add('hidden');
+  visible.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'open-game-row';
+    row.innerHTML = `<div class="game-info"><div class="game-name">Game ${g.name}</div><div class="game-code">Code: ${g.code}</div></div><button class="action-btn">Join</button>`;
+    row.querySelector('button').addEventListener('click', () => joinGameByCode(g.code));
+    openGamesList.appendChild(row);
+  });
+}
+
+btnCreateGame.addEventListener('click', createOnlineGame);
+
+function createOnlineGame(){
+  if (!peerLibReady()) return;
+  const code = randCode();
+  myOpenGameCode = code;
+  mode = 'online';
+  myMark = 'X';
+  showScreen('waiting');
+  waitingCode.textContent = code;
+
+  const url = new URL(window.location.href);
+  url.searchParams.set('game', code);
+  waitingLink.value = url.toString();
+
+  const gameHostPeer = new Peer(CODE_PREFIX + code, { debug: 0 });
+
+  gameHostPeer.on('open', () => {
+    if (isLobbyHost){
+      openGames.set(code, { code, name: code, ownerPeerId: myPeer ? myPeer.id : gameHostPeer.id });
       broadcastLobbyList();
-    } else if (data.type === 'remove-game') {
-      openGames.delete(data.code);
-      broadcastLobbyList();
-    }
-  }
-
-  function broadcastLobbyList() {
-    const list = Array.from(openGames.values());
-    for (const conn of lobbyClients.values()) {
-      if (conn.open) conn.send({ type: 'games-list', games: list });
-    }
-    if (isLobbyHost) renderOpenGamesFromList(list);
-  }
-
-  function connectAsLobbyClient() {
-    isLobbyHost = false;
-    if (myPeer && myPeer.open) {
-      openLobbyConnection();
+    } else if (lobbyConn && lobbyConn.open){
+      lobbyConn.send({ type:'announce-game', code, name: code });
     } else {
-      if (!peerLibReady()) return;
-      myPeer = new Peer(undefined, { debug: 0 });
-      myPeer.on('open', () => openLobbyConnection());
-      myPeer.on('error', (err) => {
-        openGamesEmpty.textContent = 'Could not reach lobby. Try refresh.';
-      });
+      setTimeout(() => {
+        if (lobbyConn && lobbyConn.open){
+          lobbyConn.send({ type:'announce-game', code, name: code });
+        } else if (isLobbyHost){
+          openGames.set(code, { code, name: code, ownerPeerId: myPeer ? myPeer.id : gameHostPeer.id });
+          broadcastLobbyList();
+        }
+      }, 800);
     }
-  }
-
-  function openLobbyConnection() {
-    if (lobbyConn) { try { lobbyConn.close(); } catch(e){} }
-    lobbyConn = myPeer.connect(LOBBY_ID, { reliable: true });
-    lobbyConn.on('open', () => {
-      openGamesLabel.textContent = 'Open Games';
-      if (myOpenGameCode) {
-        lobbyConn.send({ type: 'announce-game', code: myOpenGameCode, name: myOpenGameCode });
-      }
-    });
-    lobbyConn.on('data', (data) => {
-      if (data && data.type === 'games-list') {
-        renderOpenGamesFromList(data.games || []);
-      }
-    });
-    lobbyConn.on('error', () => {
-      openGamesEmpty.textContent = 'Lobby unavailable. Tap refresh to retry.';
-    });
-    lobbyConn.on('close', () => {
-      openGamesEmpty.textContent = 'Disconnected from lobby. Tap refresh.';
-    });
-  }
-
-  function renderOpenGames() {
-    if (isLobbyHost) {
-      renderOpenGamesFromList(Array.from(openGames.values()));
-    }
-  }
-
-  function renderOpenGamesFromList(list) {
-    const visible = list.filter(g => g.code !== myOpenGameCode);
-    openGamesList.innerHTML = '';
-    if (visible.length === 0) {
-      openGamesEmpty.textContent = 'No open games right now — create one!';
-      openGamesEmpty.classList.remove('hidden');
-      openGamesList.appendChild(openGamesEmpty);
-      return;
-    }
-    openGamesEmpty.classList.add('hidden');
-    visible.forEach(g => {
-      const row = document.createElement('div');
-      row.className = 'open-game-row';
-      row.innerHTML = `
-        <div class="game-info">
-          <div class="game-name">Game ${g.name}</div>
-          <div class="game-code">Code: ${g.code}</div>
-        </div>
-        <button class="action-btn">Join</button>
-      `;
-      row.querySelector('button').addEventListener('click', () => joinGameByCode(g.code));
-      openGamesList.appendChild(row);
-    });
-  }
-
-  btnCreateGame.addEventListener('click', () => {
-    createOnlineGame();
   });
 
-  function createOnlineGame() {
-    if (!peerLibReady()) return;
-    const code = randCode();
-    myOpenGameCode = code;
-    mode = 'online';
-    myMark = 'X';
-
-    showScreen('waiting');
-    waitingCode.textContent = code;
-    const url = new URL(window.location.href);
-    url.searchParams.set('game', code);
-    waitingLink.value = url.toString();
-
-    if (myPeer) { try { myPeer.destroy(); } catch(e){} }
-    myPeer = new Peer(CODE_PREFIX + code, { debug: 0 });
-
-    myPeer.on('open', () => {
-      if (isLobbyHost) {
-        openGames.set(code, { code, name: code, ownerPeerId: myPeer.id });
-        broadcastLobbyList();
-      } else if (lobbyConn && lobbyConn.open) {
-        lobbyConn.send({ type: 'announce-game', code, name: code });
-      } else {
-        setTimeout(() => {
-          if (lobbyConn && lobbyConn.open) {
-            lobbyConn.send({ type: 'announce-game', code, name: code });
-          } else if (isLobbyHost) {
-            openGames.set(code, { code, name: code, ownerPeerId: myPeer.id });
-            broadcastLobbyList();
-          }
-        }, 800);
-      }
-    });
-
-    myPeer.on('connection', (conn) => {
-      gameConn = conn;
-      
-      const sendHello = () => {
-        if (conn.open) conn.send({ type: 'hello' });
-      };
-
-      // In some cases PeerJS connections are already open on the receiving end.
-      // We forcefully try to send the handshake to guarantee the joining peer gets it.
-      conn.on('open', sendHello);
-      
-      if (conn.open) sendHello();
-      setTimeout(sendHello, 500);
-      setTimeout(sendHello, 1500);
-
-      setupGameConnection(true);
-    });
-
-    myPeer.on('error', (err) => {
-      showToast('Connection error creating game.');
-    });
-  }
-
-  btnJoinCode.addEventListener('click', () => {
-    const code = joinCodeInput.value.trim().toUpperCase();
-    if (!code) return;
-    joinGameByCode(code);
-  });
-
-  joinCodeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') btnJoinCode.click();
-  });
-
-  function joinGameByCode(code) {
-    mode = 'online';
-    myMark = 'O';
-
-    if (!myPeer) {
-      if (!peerLibReady()) return;
-      myPeer = new Peer(undefined, { debug: 0 });
-      myPeer.on('open', () => actuallyJoin(code));
-      myPeer.on('error', () => showToast('Could not connect.'));
-    } else if (myPeer.open) {
-      actuallyJoin(code);
-    } else {
-      myPeer.on('open', () => actuallyJoin(code));
-    }
-  }
-
-  function actuallyJoin(code) {
-    showScreen('game');
-    setConnStatus('pending', 'Connecting to host…');
-    turnBar.classList.add('hidden');
-    statusEl.classList.add('hidden');
-    bigBoardEl.classList.add('hidden');
-    gameControls.classList.add('hidden');
-    legendRow.classList.add('hidden');
-    starterPicker.classList.add('hidden');
-    leaveBtn.classList.remove('hidden');
-
-    const conn = myPeer.connect(CODE_PREFIX + code, { reliable: true });
+  gameHostPeer.on('connection', (conn) => {
     gameConn = conn;
-
-    let hasConnected = false;
-
-    function finalizeConnection() {
-      if (hasConnected) return;
-      hasConnected = true;
-      setupGameConnection(false);
-    }
-
-    conn.on('open', () => {
-      finalizeConnection();
-    });
-
-    // Fallback: If PeerJS swallows the 'open' event but data arrives 
-    // (like the host's 'hello' handshake), we are connected.
-    conn.on('data', () => {
-      finalizeConnection();
-    });
-
-    // Hard timeout fallback
-    setTimeout(() => {
-      if (!hasConnected) {
-        setConnStatus('bad', 'Connection timed out.');
-        showToast('Host did not respond.');
-        teardownGameConn();
-      }
-    }, 7000);
-
-    conn.on('error', () => {
-      if (!hasConnected) {
-        setConnStatus('bad', 'Could not reach that game.');
-        showToast('Game not found or offline.');
-      }
-    });
-  }
-
-  function setupGameConnection(isHost) {
-    setConnStatus('ok', isHost ? 'Opponent connected!' : 'Connected to host!');
-    showScreen('game');
-    leaveBtn.classList.remove('hidden');
-
-    gameConn.on('data', (data) => handleGameMessage(data));
-    gameConn.on('close', () => {
-      setConnStatus('bad', 'Opponent disconnected.');
-      showToast('Opponent left the game.');
-    });
-    gameConn.on('error', () => {
-      setConnStatus('bad', 'Connection error.');
-    });
-
-    resetToStarterPicker();
-
-    if (isHost) {
-      announceGameFilled();
-    }
-  }
-
-  function sendToPeer(msg) {
-    if (gameConn && gameConn.open) gameConn.send(msg);
-  }
-
-  function handleGameMessage(data) {
-    if (!data || !data.type) return;
-    if (data.type === 'hello') return; // Safely ignore the handshake
-    
-    if (data.type === 'start') {
-      beginGame(data.starter);
-    } else if (data.type === 'move') {
-      applyMove(data.boardIdx, data.cellIdx, data.mark);
-      renderBoard();
-    } else if (data.type === 'reset') {
-      resetToStarterPicker();
-    }
-  }
-
-  function announceGameFilled() {
-    if (isLobbyHost) {
-      openGames.delete(myOpenGameCode);
-      broadcastLobbyList();
-    } else if (lobbyConn && lobbyConn.open && myOpenGameCode) {
-      lobbyConn.send({ type: 'remove-game', code: myOpenGameCode });
-    }
-  }
-
-  function announceGameClosed() {
-    if (!myOpenGameCode) return;
-    if (isLobbyHost) {
-      openGames.delete(myOpenGameCode);
-      broadcastLobbyList();
-    } else if (lobbyConn && lobbyConn.open) {
-      lobbyConn.send({ type: 'remove-game', code: myOpenGameCode });
-    }
-    myOpenGameCode = null;
-  }
-
-  function teardownGameConn() {
-    announceGameClosed();
-    if (gameConn) { try { gameConn.close(); } catch(e){} gameConn = null; }
-    connStatusRow.classList.add('hidden');
-    gameStarted = false;
-    mode = 'local';
-  }
-
-  function checkUrlForGameCode() {
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get('game');
-    if (code) {
-      showScreen('lobby');
-      connectToLobby();
-      setTimeout(() => joinGameByCode(code.toUpperCase()), 400);
-    }
-  }
-
-  btnCopyLink.addEventListener('click', () => {
-    waitingLink.select();
-    waitingLink.setSelectionRange(0, 99999);
-    try {
-      document.execCommand('copy');
-      showToast('Link copied!');
-    } catch (e) {
-      navigator.clipboard && navigator.clipboard.writeText(waitingLink.value);
-      showToast('Link copied!');
-    }
+    const sendHello = () => { if (conn.open) conn.send({ type:'hello' }); };
+    conn.on('open', sendHello);
+    if (conn.open) sendHello();
+    setTimeout(sendHello, 500);
+    setTimeout(sendHello, 1500);
+    setupGameConnection(true);
   });
 
-  checkUrlForGameCode();
+  gameHostPeer.on('error', (err) => {
+    console.error('Game host peer error:', err);
+    showToast('Connection error creating game.');
+  });
+
+  window._gameHostPeer = gameHostPeer;
+}
+
+btnJoinCode.addEventListener('click', () => {
+  const code = joinCodeInput.value.trim().toUpperCase();
+  if (!code) return;
+  joinGameByCode(code);
+});
+joinCodeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') btnJoinCode.click(); });
+
+function joinGameByCode(code){
+  mode = 'online';
+  myMark = 'O';
+  if (!peerLibReady()) return;
+
+  const guestPeer = new Peer(undefined, { debug: 0 });
+  guestPeer.on('open', () => actuallyJoin(code, guestPeer));
+  guestPeer.on('error', () => showToast('Could not connect.'));
+}
+
+function actuallyJoin(code, guestPeer){
+  showScreen('game');
+  setConnStatus('pending', 'Connecting to host…');
+  turnBar.classList.add('hidden');
+  statusEl.classList.add('hidden');
+  bigBoardEl.classList.add('hidden');
+  gameControls.classList.add('hidden');
+  legendRow.classList.add('hidden');
+  starterPicker.classList.add('hidden');
+  leaveBtn.classList.remove('hidden');
+
+  const conn = guestPeer.connect(CODE_PREFIX + code, { reliable: true });
+  gameConn = conn;
+  window._guestPeer = guestPeer;
+  let hasConnected = false;
+
+  function finalizeConnection(){
+    if (hasConnected) return;
+    hasConnected = true;
+    setupGameConnection(false);
+  }
+
+  conn.on('open', finalizeConnection);
+  conn.on('data', finalizeConnection);
+
+  setTimeout(() => {
+    if (!hasConnected){
+      setConnStatus('bad', 'Connection timed out.');
+      showToast('Host did not respond.');
+      teardownGameConn();
+    }
+  }, 7000);
+
+  conn.on('error', () => {
+    if (!hasConnected){
+      setConnStatus('bad', 'Could not reach that game.');
+      showToast('Game not found or offline.');
+    }
+  });
+}
+
+function setupGameConnection(isHost){
+  setConnStatus('ok', isHost ? 'Opponent connected!' : 'Connected to host!');
+  showScreen('game');
+  leaveBtn.classList.remove('hidden');
+
+  gameConn.on('data', (data) => handleGameMessage(data));
+  gameConn.on('close', () => {
+    setConnStatus('bad', 'Opponent disconnected.');
+    showToast('Opponent left the game.');
+  });
+  gameConn.on('error', () => {
+    setConnStatus('bad', 'Connection error.');
+    resetToStarterPicker();
+  });
+
+  if (isHost) announceGameFilled();
+  resetToStarterPicker();
+}
+
+function sendToPeer(msg){
+  if (gameConn && gameConn.open) gameConn.send(msg);
+}
+
+function handleGameMessage(data){
+  if (!data || !data.type) return;
+  if (data.type === 'hello') return;
+  if (data.type === 'start') beginGame(data.starter);
+  else if (data.type === 'move'){ applyMove(data.boardIdx, data.cellIdx, data.mark); renderBoard(); }
+  else if (data.type === 'reset') resetToStarterPicker();
+}
+
+function announceGameFilled(){
+  if (isLobbyHost){
+    openGames.delete(myOpenGameCode);
+    broadcastLobbyList();
+  } else if (lobbyConn && lobbyConn.open){
+    lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
+  }
+}
+
+function announceGameClosed(){
+  if (!myOpenGameCode) return;
+  if (isLobbyHost){
+    openGames.delete(myOpenGameCode);
+    broadcastLobbyList();
+  } else if (lobbyConn && lobbyConn.open){
+    lobbyConn.send({ type:'remove-game', code: myOpenGameCode });
+  }
+  myOpenGameCode = null;
+}
+
+function teardownGameConn(){
+  announceGameClosed();
+  if (gameConn){ try { gameConn.close(); } catch(e){} gameConn = null; }
+  connStatusRow.classList.add('hidden');
+  gameStarted = false;
+  mode = 'local';
+}
+
+function checkUrlForGameCode(){
+  const url = new URL(window.location.href);
+  const code = url.searchParams.get('game');
+  if (code){
+    showScreen('lobby');
+    connectToLobby();
+    setTimeout(() => joinGameByCode(code.toUpperCase()), 400);
+  }
+}
+
+btnCopyLink.addEventListener('click', () => {
+  waitingLink.select();
+  waitingLink.setSelectionRange(0, 99999);
+  try { document.execCommand('copy'); showToast('Link copied!'); }
+  catch(e){ if (navigator.clipboard) navigator.clipboard.writeText(waitingLink.value); showToast('Link copied!'); }
+});
+
+checkUrlForGameCode();
+
 })();
 </script>
-
 </body>
 </html>
