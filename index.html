@@ -666,28 +666,35 @@ function setConnStatus(state, text){
   connDot.className = `dot ${state}`; connText.textContent = text;
 }
 
-// Public STUN-only ICE config frequently fails behind symmetric NATs / carrier-grade NAT
+// STUN-only ICE config frequently fails behind symmetric NATs / carrier-grade NAT
 // (common on cellular networks and some routers), which is the most common cause of
-// connections silently hanging forever. Adding free public TURN relays as a fallback
-// fixes this in the vast majority of cases.
+// connections silently hanging forever. A real TURN relay (Metered) is used as the
+// reliable fallback whenever a direct/STUN connection isn't possible. STUN is tried
+// first since it's free and unlimited — TURN (metered, billed) only kicks in when
+// a direct path can't be found.
 const ICE_CONFIG = {
   iceServers: [
+    { urls: 'stun:stun.relay.metered.ca:80' },
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:global.stun.twilio.com:3478' },
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
+      urls: 'turn:standard.relay.metered.ca:80',
+      username: '5cc19fde469b15106060eae5',
+      credential: '/GJPEfplUU5+8Pzd'
     },
     {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
+      urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
+      username: '5cc19fde469b15106060eae5',
+      credential: '/GJPEfplUU5+8Pzd'
     },
     {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
+      urls: 'turn:standard.relay.metered.ca:443',
+      username: '5cc19fde469b15106060eae5',
+      credential: '/GJPEfplUU5+8Pzd'
+    },
+    {
+      urls: 'turns:standard.relay.metered.ca:443?transport=tcp',
+      username: '5cc19fde469b15106060eae5',
+      credential: '/GJPEfplUU5+8Pzd'
     }
   ]
 };
